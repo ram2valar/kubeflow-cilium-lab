@@ -1,0 +1,228 @@
+# KubeCon India 2026 – Presentation & Demo Prep Plan
+
+**Talk:** When Kubeflow Fights Cilium: Debugging 60% Idle GPUs in Kubernetes  
+**Event:** KubeCon India 2026 | **Dates:** 18–19 June 2026  
+**Slide upload deadline:** 10 June 2026  
+**Session length:** Assume 45–55 minutes (confirm with organizers)
+
+---
+
+## Timeline Overview
+
+| Phase | Focus | Target completion | Status |
+|-------|--------|-------------------|--------|
+| 1 | Lab setup & demo viability | End of April 2026 | ✅ COMPLETE |
+| 2 | Slide outline & first draft | Mid-May 2026 | ✅ COMPLETE |
+| 3 | Demo script & recorded backup | End of May 2026 | ✅ COMPLETE |
+| 4 | Rehearsals & timing | 1–7 June 2026 | ⏳ PENDING |
+| 5 | Final slides & upload | **10 June 2026** | ⏳ PENDING |
+| 6 | Event week prep | 10–17 June 2026 | ⏳ PENDING |
+
+---
+
+## Phase 1: Lab Setup & Demo Viability ✅ COMPLETE
+
+**Goal:** Reproduce the problem and fix in a real environment so the story and demo are credible.
+
+### 1.1 Lab environment
+
+- [x] Stand up a Kubernetes cluster — 5-node kind cluster (zone-a: 2 GPU-tainted nodes, zone-b: 2 CPU nodes, 1 control-plane), Cilium CNI
+- [x] Install and configure Kubeflow-style workloads (simulated with busybox coordinator + GPU worker jobs)
+- [x] Install Cilium as CNI with zone-based network topology policy (`deny-cross-zone-gpu-traffic`)
+- [x] Add Prometheus + Grafana for metrics (kube-prometheus-stack)
+- [x] Document node roles, GPU allocation, and workload setup
+
+### 1.2 Reproduce the problem
+
+- [x] BEFORE workload: coordinator lands in zone-b, GPU workers in zone-a, Cilium blocks traffic → workers idle
+- [x] Captured before metrics: GPU utilization ~40% (allocated but blocked), conflict score = 1, alerts firing
+- [x] Demo script `scripts/demo-before.sh` verified end-to-end
+
+### 1.3 Apply the fix
+
+- [x] Fix: `nodeAffinity` + `topologySpreadConstraints` pin coordinator to zone-a (same zone as GPU workers)
+- [x] AFTER workload: all pods in zone-a → Cilium allows traffic → workers connect → training at 85%
+- [x] Demo script `scripts/demo-after.sh` verified end-to-end
+
+### 1.4 Prometheus / diagnostics
+
+- [x] PrometheusRule with recording rules: `gpu_demo_utilization_pct`, `gpu_demo_workers_connected`, `gpu_demo_coordinator_zone`, `gpu_demo_conflict_score`, etc.
+- [x] Alerts: `GPUUtilizationCriticallyLow`, `GPUWorkersCantReachCoordinator`
+- [x] Grafana dashboard: GPU Utilization %, GPU Idle %, Scheduling Conflict Score, Coordinator Zone panel, time-series arc
+
+### 1.5 GitHub repo
+
+- [x] Repo created: https://github.com/ram2valar/kubeflow-cilium-lab
+- [x] README, manifests, scripts, Grafana dashboard, Prometheus rules all pushed
+- [ ] Final PPTX to be pushed once animations/storytelling tweaks are done
+
+---
+
+## Phase 2: Slide Outline & First Draft ✅ COMPLETE
+
+**Goal:** Full deck that matches the proposal and supports the live demo.
+
+### 2.1 Slide deck
+
+- [x] Built using KubeCon India 2026 branded PowerPoint template
+- [x] File: `/Users/ranagara/Documents/cncf-europe-india-2026-proposals/kubecon-india-2026-kubeflow-cilium.pptx`
+- [x] 14+ slides (count increased after image alignment)
+- [x] Speaker: Ramkumar Nagaraj | Sr. Computer Scientist, Adobe
+- [x] Slide order: Title → Agenda → §1 Problem → Topology → Conflict → Demo BEFORE → §2 Root Cause → Cilium Policy → Alert → §3 Fix → YAML Fix → Demo AFTER → Before/After Numbers → Takeaways+Q&A
+- [x] Repo link on last slide updated to: `github.com/ram2valar/kubeflow-cilium-lab`
+- [x] Content QA passed
+
+### 2.2 In progress
+
+- [ ] Animations + storytelling tweaks (in progress)
+- [ ] Final PPTX to be pushed to GitHub repo once done
+
+---
+
+## Phase 3: Demo Script & Recorded Backup ✅ COMPLETE
+
+**Goal:** Reliable live demo + a recorded backup if Wi‑Fi or cluster fails.
+
+### 3.1 Demo script
+
+- [x] `scripts/demo-before.sh` — reproduces scheduling conflict (coordinator zone-b, workers blocked, 40% utilization, alerts firing)
+- [x] `scripts/demo-after.sh` — applies topology spread fix (all pods zone-a, workers train, 85% utilization, conflict resolved)
+- [x] `scripts/open-dashboards.sh` — port-forwards Grafana (3000) and Prometheus (9090)
+- [x] `scripts/setup.sh` / `scripts/teardown.sh` for full cluster lifecycle
+
+### 3.2 Recorded backup
+
+- [x] `recordings/demo-after-final.mp4` — trimmed (first/last 10s removed), 3m11s, 13MB
+- [x] `recordings/demo-before.mp4` — raw recording, 10MB (kept as reference)
+- [x] Manual recording approach (no automated recording scripts)
+
+### 3.3 Demo environment
+
+- [x] Live cluster: kind on MacBook Pro (KUBECONFIG: `~/.kube/config`, context: `kind-kubeflow-cilium-demo`)
+- [x] Fallback: recorded video `demo-after-final.mp4`
+- [x] Demo flow tested: `open-dashboards.sh` → `demo-before.sh` → `demo-after.sh`
+
+---
+
+## Phase 4: Rehearsals & Timing (1–7 June 2026) ⏳ PENDING
+
+**Goal:** On-time, smooth delivery and confident handling of demo.
+
+### 4.1 Rehearsals
+
+- [ ] Full run-through at least 2 times (slides + live demo)
+- [ ] One rehearsal with co-speaker (if confirmed): who speaks which section, who drives the demo
+- [ ] One dry run as if at the venue: same laptop, same network (or backup video)
+
+### 4.2 Timing
+
+- [ ] Time each section; stay within session length (45 min talk + 10 min Q&A)
+- [ ] If over: cut Context or Research setup detail; keep problem → cause → fix → demo → takeaways
+- [ ] Plan buffer: "If demo fails at minute 25, switch to recorded video and continue from Results slide"
+
+### 4.3 Q&A prep
+
+- [ ] Prepare answer for: "Does this work at 500 nodes vs your 3-node kind cluster?"
+- [ ] List 5–10 likely questions (e.g. "Does this apply to non-GPU?" "What about other CNIs?" "Scale limits?")
+- [ ] Prepare short answers (2–3 sentences each)
+- [ ] Have GitHub repo URL ready: `github.com/ram2valar/kubeflow-cilium-lab`
+
+---
+
+## Phase 5: Final Slides & Upload (deadline 10 June 2026) ⏳ PENDING
+
+**Goal:** Polished deck uploaded by the deadline.
+
+### 5.1 Slide polish
+
+- [ ] Finish animations + storytelling tweaks
+- [ ] Confirm all links working (GitHub repo URL correct on last slide ✓)
+- [ ] Speaker notes with demo cues and timing
+
+### 5.2 Export and upload
+
+- [ ] Push final PPTX to `ram2valar/kubeflow-cilium-lab` GitHub repo
+- [ ] Export as PDF (backup)
+- [ ] **Upload to KubeCon portal by 10 June 2026**
+- [ ] Confirm receipt (email or portal confirmation)
+
+### 5.3 Backup copy
+
+- [ ] Keep a copy in cloud and on USB; same version as uploaded
+
+---
+
+## Phase 6: Event Week (10–17 June 2026) ⏳ PENDING
+
+**Goal:** Logistics and last-mile prep; no surprises on stage.
+
+### 6.1 Logistics
+
+- [ ] Confirm day and time of session (18 or 19 June)
+- [ ] Confirm room and AV: HDMI/USB-C, mic, clicker
+- [ ] Plan arrival at venue with buffer (e.g. 30 min before session)
+
+### 6.2 Tech checklist
+
+- [ ] Laptop charged; dongles for HDMI/USB-C
+- [ ] Demo: kind cluster running on laptop OR recorded video ready as fallback
+- [ ] Slides on laptop (in case event system fails)
+- [ ] GitHub repo live: https://github.com/ram2valar/kubeflow-cilium-lab
+
+### 6.3 Day-of
+
+- [ ] Test display and audio in the room before your slot
+- [ ] If live demo: quick test (`kubectl get nodes --context kind-kubeflow-cilium-demo` or open Grafana at localhost:3000)
+- [ ] Introduce yourself and follow the script
+
+---
+
+## Deliverables Checklist (from proposal)
+
+| Deliverable | By when | Status |
+|-------------|---------|--------|
+| GitHub repo (manifests, configs, README) | Before event; link in slides | ✅ https://github.com/ram2valar/kubeflow-cilium-lab |
+| Prometheus queries / Grafana dashboard | Phase 1; add to repo | ✅ In repo |
+| Recorded demo video | End of May (backup) | ✅ `demo-after-final.mp4` (3m11s) |
+| Final PPTX in repo | Before slide upload | ⏳ Pending animations/tweaks |
+| Slide upload to KubeCon portal | **10 June 2026** | ⏳ Pending |
+| Reproducibility / runbook | Before or after event | ✅ `scripts/setup.sh` + README |
+
+---
+
+## Open Items
+
+| Item | Owner | Notes |
+|------|-------|-------|
+| Co-speaker confirmation | Ramkumar | Not yet confirmed |
+| Slide animations + storytelling tweaks | Ramkumar | In progress |
+| Rehearsals | Ramkumar + co-speaker | 1–7 June |
+| Slide upload | Ramkumar | Hard deadline: 10 June |
+
+---
+
+## Risk Mitigation
+
+| Risk | Mitigation |
+|------|------------|
+| Live demo fails (network, cluster down) | `recordings/demo-after-final.mp4` ready; switch in 10 seconds |
+| Session shorter than planned | Mark "optional" slides; be ready to drop Context/Research setup detail |
+| Co-speaker unavailable | One speaker can do full talk; other joins for Q&A if possible |
+| Laptop/AV issues | PDF of slides on USB; present from event machine if needed |
+| kind cluster not running at venue | All workloads scripted; `setup.sh` + `demo-before.sh` + `demo-after.sh` reproducible in ~10 min |
+
+---
+
+## Quick Reference – Key Dates
+
+- ~~**End April 2026:** Lab working; problem + fix reproducible; metrics and configs saved.~~ ✅
+- ~~**Mid-May 2026:** First full slide draft; demo script written.~~ ✅
+- ~~**End May 2026:** Rehearsals started; recorded backup demo done.~~ ✅
+- **1–7 June 2026:** Final rehearsals; timing locked.
+- **10 June 2026:** **Slides uploaded. ← HARD DEADLINE**
+- **10–17 June 2026:** Logistics and tech check.
+- **18–19 June 2026:** **KubeCon India 2026 – deliver the session.**
+
+---
+
+*Last updated: 2026-05-16*
