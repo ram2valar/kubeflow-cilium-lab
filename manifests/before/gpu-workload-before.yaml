@@ -1,0 +1,158 @@
+# =============================================================================
+# BEFORE STATE: GPU Workload WITHOUT Topology Constraints
+#
+# GPU exclusivity is simulated via node taint (gpu=present:NoSchedule) +
+# nodeSelector (gpu: "true"). In a real cluster these pods would also carry
+# nvidia.com/gpu resource requests — the scheduling behaviour is identical.
+#
+# What goes wrong:
+#   - GPU workers land on zone-a nodes (only place with the gpu taint toleration)
+#   - Coordinator has NO affinity/toleration — often lands in zone-b
+#   - Cilium deny-cross-zone-gpu-traffic policy blocks worker→coordinator comms
+#   - Workers hang waiting for coordinator; GPUs sit idle (~40% utilization)
+# =============================================================================
+
+---
+# Coordinator: schedules anywhere → often zone-b
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-coordinator
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    role: coordinator
+    scenario: before
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-training
+      role: coordinator
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        role: coordinator
+        zone: zone-b   # Static label — matches Cilium policy selector for zone-b pods
+    spec:
+      # No nodeAffinity, no topology constraint — scheduler places it anywhere,
+      # which in practice means zone-b (CPU nodes have no taint, GPU nodes do)
+      containers:
+        - name: coordinator
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "[coordinator] Starting on $(hostname)"
+              echo "[coordinator] Label zone=zone-b — Cilium will block GPU worker access"
+              # Loop keeps nc alive after each connection closes (busybox nc has no -k flag)
+              while true; do
+                nc -l -p 9999
+              done
+          ports:
+            - containerPort: 9999
+              name: rpc
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+# GPU Workers: pinned to zone-a via taint toleration + nodeSelector
+# No topology constraint on coordinator → cross-zone conflict
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ml-gpu-workers-before
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    scenario: before
+spec:
+  completions: 4
+  parallelism: 4
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        role: gpu-worker
+        zone: zone-a    # Cilium policy uses this label to restrict egress
+        scenario: before
+    spec:
+      restartPolicy: Never
+
+      # Pin workers to GPU nodes in zone-a
+      nodeSelector:
+        gpu: "true"
+
+      # Tolerate the GPU node taint (simulates GPU resource scheduling exclusivity)
+      tolerations:
+        - key: gpu
+          value: present
+          effect: NoSchedule
+
+      containers:
+        - name: gpu-worker
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              COORDINATOR_SVC="ml-coordinator.ml-demo.svc.cluster.local"
+              echo "[gpu-worker] $(hostname): Starting on GPU node (zone-a)"
+              echo "[gpu-worker] Coordinator is in zone-b — Cilium blocks this connection"
+              echo "[gpu-worker] Waiting 20s for Cilium policy to fully initialize..."
+              sleep 20
+
+              RETRY=0
+              MAX_RETRIES=24   # ~2 minutes of attempts before failing
+              while [ $RETRY -lt $MAX_RETRIES ]; do
+                if nc -z -w 2 "${COORDINATOR_SVC}" 9999 2>/dev/null; then
+                  echo "[gpu-worker] Connected to coordinator — training starting (GPU active)"
+                  for i in $(seq 1 60); do
+                    echo "[gpu-worker] Training step ${i}/60 — GPU at 85% utilization"
+                    sleep 2
+                  done
+                  echo "[gpu-worker] Training complete."
+                  exit 0
+                fi
+                RETRY=$((RETRY + 1))
+                echo "[gpu-worker] *** CANNOT REACH COORDINATOR (attempt ${RETRY}/${MAX_RETRIES}) — GPU IDLE ***"
+                sleep 5
+              done
+
+              echo "[gpu-worker] TIMED OUT: coordinator unreachable across zone boundary."
+              echo "[gpu-worker] GPU was allocated but idle for entire run."
+              exit 1
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+# Headless service so workers can find coordinator by DNS
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-coordinator
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    role: coordinator
+spec:
+  selector:
+    app: ml-training
+    role: coordinator
+  ports:
+    - name: rpc
+      port: 9999
+      targetPort: 9999
+  clusterIP: None

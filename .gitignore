@@ -1,0 +1,10 @@
+# Demo recordings (large binary files)
+recordings/*.mp4
+recordings/*.mov
+
+# macOS
+.DS_Store
+
+# Temp files
+*.tmp
+*.bak

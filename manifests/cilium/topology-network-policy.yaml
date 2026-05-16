@@ -1,0 +1,91 @@
+# =============================================================================
+# Cilium Network Policy: Topology-Aware Zone Isolation
+#
+# This policy simulates what happens in a real cluster where Cilium enforces
+# network topology boundaries. GPU worker pods in zone-a can only efficiently
+# communicate with pods in the SAME zone. Cross-zone GPU-to-coordinator
+# communication is restricted (as would occur with strict network segmentation
+# or high-latency cross-rack links in a real datacenter).
+#
+# EFFECT: If a coordinator pod lands in zone-b while GPU workers are in zone-a,
+# the workers fail to establish the collective communication needed to start
+# training. GPUs remain allocated but idle.
+# =============================================================================
+
+---
+# Allow all traffic within zone-a (GPU zone)
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-intra-zone-a
+  namespace: ml-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      zone: zone-a
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            zone: zone-a
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            zone: zone-a
+    # Allow DNS resolution (kube-dns lives in kube-system)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+    # Allow egress to Prometheus for metrics scraping
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+
+---
+# Allow all traffic within zone-b (CPU zone)
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-intra-zone-b
+  namespace: ml-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      zone: zone-b
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            zone: zone-b
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            zone: zone-b
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+
+---
+# Deny cross-zone GPU traffic (simulates datacenter rack isolation)
+# GPU workers cannot reach coordinators in the other zone, causing hang
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: deny-cross-zone-gpu-traffic
+  namespace: ml-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      role: gpu-worker
+  egress:
+    # GPU workers can only reach zone-a pods
+    - toEndpoints:
+        - matchLabels:
+            zone: zone-a
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring

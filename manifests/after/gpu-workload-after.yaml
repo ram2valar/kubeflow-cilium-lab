@@ -1,0 +1,203 @@
+# =============================================================================
+# AFTER STATE: GPU Workload WITH Topology Spread Constraints (THE FIX)
+#
+# Three additions to the workload spec align Kubeflow scheduling with
+# Cilium's zone-based network topology:
+#   1. nodeAffinity — pins coordinator to zone-a (same zone as GPU workers)
+#   2. topologySpreadConstraints — ensures all ml-training pods stay in zone-a
+#   3. Same GPU taint toleration on coordinator (so it can reach GPU nodes)
+#
+# Result: all pods in zone-a → Cilium intra-zone policy allows all traffic
+# → workers connect to coordinator immediately → GPUs compute at ~85%
+# =============================================================================
+
+---
+# Coordinator: FIXED — pinned to zone-a via nodeAffinity + topology spread
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-coordinator
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    role: coordinator
+    scenario: after
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-training
+      role: coordinator
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        role: coordinator
+        zone: zone-a    # Now zone-a — Cilium intra-zone policy allows GPU worker access
+        scenario: after
+    spec:
+      # FIX 1: Pin coordinator to zone-a (same zone as GPU workers)
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                      - zone-a
+
+      # FIX 2: Ensure coordinator spreads with workers in same topology zone
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: ml-training
+
+      # FIX 3: Tolerate GPU taint so coordinator can land on zone-a nodes
+      tolerations:
+        - key: gpu
+          value: present
+          effect: NoSchedule
+
+      containers:
+        - name: coordinator
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "[coordinator] Starting in zone-a — same zone as GPU workers"
+              echo "[coordinator] Cilium intra-zone-a policy: all connections allowed"
+              while true; do
+                nc -l -p 9999
+              done
+          ports:
+            - containerPort: 9999
+              name: rpc
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+# GPU Workers: FIXED — topology spread keeps all pods in zone-a
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ml-gpu-workers-after
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    scenario: after
+spec:
+  completions: 4
+  parallelism: 4
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        role: gpu-worker
+        zone: zone-a
+        scenario: after
+    spec:
+      restartPolicy: Never
+
+      nodeSelector:
+        gpu: "true"
+
+      tolerations:
+        - key: gpu
+          value: present
+          effect: NoSchedule
+
+      # FIX: Spread across zone-a only; also spread across nodes within zone-a
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: ml-training
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              role: gpu-worker
+
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                      - zone-a
+
+      containers:
+        - name: gpu-worker
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              COORDINATOR_SVC="ml-coordinator.ml-demo.svc.cluster.local"
+              echo "[gpu-worker] $(hostname): Starting in zone-a"
+              echo "[gpu-worker] Coordinator is also in zone-a — connection allowed by Cilium"
+              echo "[gpu-worker] Waiting 15s for coordinator to initialize..."
+              sleep 15
+
+              RETRY=0
+              MAX_RETRIES=30
+              while [ $RETRY -lt $MAX_RETRIES ]; do
+                if nc -z -w 2 "${COORDINATOR_SVC}" 9999 2>/dev/null; then
+                  echo "[gpu-worker] Connected to coordinator immediately!"
+                  echo "[gpu-worker] Starting training — GPU fully utilized"
+                  for i in $(seq 1 30); do
+                    echo "[gpu-worker] Training step ${i}/30 — GPU ACTIVE at ~85%"
+                    sleep 1
+                  done
+                  echo "[gpu-worker] 30-step training complete. SUCCESS."
+                  exit 0
+                fi
+                RETRY=$((RETRY + 1))
+                echo "[gpu-worker] Waiting for coordinator to start (${RETRY}/${MAX_RETRIES})..."
+                sleep 3
+              done
+
+              echo "[gpu-worker] ERROR: coordinator did not start in time"
+              exit 1
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-coordinator
+  namespace: ml-demo
+  labels:
+    app: ml-training
+    role: coordinator
+spec:
+  selector:
+    app: ml-training
+    role: coordinator
+  ports:
+    - name: rpc
+      port: 9999
+      targetPort: 9999
+  clusterIP: None

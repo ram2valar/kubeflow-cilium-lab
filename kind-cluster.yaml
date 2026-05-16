@@ -1,0 +1,32 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kubeflow-cilium-demo
+
+networking:
+  # Disable default CNI so Cilium can be installed as CNI
+  disableDefaultCNI: true
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/16"
+
+nodes:
+  - role: control-plane
+    # Expose Grafana (30080) and Prometheus (30090) on localhost
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP
+      - containerPort: 30090
+        hostPort: 30090
+        protocol: TCP
+
+  # Zone-A: GPU nodes (labels applied post-creation by setup.sh)
+  - role: worker
+  - role: worker
+
+  # Zone-B: CPU-only nodes (labels applied post-creation by setup.sh)
+  - role: worker
+  - role: worker
+
+# NOTE: kind v1alpha4 does NOT support labels: under worker nodes.
+# Node labels (topology.kubernetes.io/zone, gpu, node-type) and
+# GPU taints are applied by setup.sh after cluster creation.

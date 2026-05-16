@@ -1,0 +1,170 @@
+# =============================================================================
+# Prometheus Recording Rules — Kubeflow/Cilium GPU Scheduling Demo
+#
+# Since we use fake GPUs (no DCGM exporter), these rules derive GPU
+# utilization signals from pod scheduling state. They accurately represent
+# what you'd see with real DCGM metrics:
+#
+#   - gpu_demo_utilization_pct: ~40% when workers can't reach coordinator
+#                               ~85% when all pods co-located in zone-a
+#   - gpu_demo_idle_pct: inverse of utilization
+#   - gpu_demo_pending_workers: count of GPU workers stuck waiting
+# =============================================================================
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gpu-scheduling-demo-rules
+  namespace: monitoring
+  labels:
+    release: monitoring  # Matches kube-prometheus-stack label selector
+spec:
+  groups:
+    # -----------------------------------------------------------------------
+    # Group 1: GPU Utilization (derived from pod connectivity state)
+    # -----------------------------------------------------------------------
+    - name: gpu_utilization
+      interval: 15s
+      rules:
+        # Workers successfully connected = GPU actively computing (high util)
+        # Workers stuck (can't reach coordinator) = GPU idle (low util)
+        - record: gpu_demo_workers_connected
+          expr: |
+            count(
+              kube_pod_status_phase{namespace="ml-demo", phase="Succeeded"}
+              * on(pod) group_left()
+              kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
+            ) or vector(0)
+
+        - record: gpu_demo_workers_failed
+          expr: |
+            count(
+              kube_pod_status_phase{namespace="ml-demo", phase="Failed"}
+              * on(pod) group_left()
+              kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
+            ) or vector(0)
+
+        - record: gpu_demo_workers_running
+          expr: |
+            count(
+              kube_pod_status_phase{namespace="ml-demo", phase="Running"}
+              * on(pod) group_left()
+              kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
+            ) or vector(0)
+
+        # Simulated GPU utilization:
+        # - Running + connected: 85% (topology-aware, all in zone-a)
+        # - Running + stuck (before fix): 40% (allocated but idle)
+        # - No pods: 0%
+        - record: gpu_demo_utilization_pct
+          expr: |
+            (
+              (gpu_demo_workers_connected / 4) * 85
+            ) or (
+              clamp_min(
+                (gpu_demo_workers_running / 4) * 40,
+                0
+              )
+            ) or vector(0)
+
+        - record: gpu_demo_idle_pct
+          expr: 100 - gpu_demo_utilization_pct
+
+    # -----------------------------------------------------------------------
+    # Group 2: Scheduling Conflict Indicators
+    # -----------------------------------------------------------------------
+    - name: scheduling_conflict_indicators
+      interval: 15s
+      rules:
+        # Cross-zone pod placement: coordinator in zone-b, workers in zone-a
+        # = scheduling conflict is active
+        - record: gpu_demo_coordinator_zone
+          expr: |
+            count(
+              kube_pod_info{namespace="ml-demo"}
+              * on(pod) group_left()
+              kube_pod_labels{namespace="ml-demo", label_role="coordinator", label_zone="zone-b"}
+            ) or vector(0)
+
+        # Pending GPU pods: scheduler can't place them (conflict state)
+        - record: gpu_demo_pending_workers
+          expr: |
+            count(
+              kube_pod_status_phase{namespace="ml-demo", phase="Pending"}
+              * on(pod) group_left()
+              kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
+            ) or vector(0)
+
+        # GPU allocation: how many GPUs are claimed vs actually computing
+        - record: gpu_demo_allocated_count
+          expr: |
+            kube_pod_container_resource_requests{
+              namespace="ml-demo",
+              resource="nvidia_com_gpu",
+              container="gpu-worker"
+            } * on(pod) group_left()
+            kube_pod_status_phase{namespace="ml-demo", phase="Running"}
+            or vector(0)
+
+        # Scheduling conflict score: 1.0 = full conflict, 0.0 = resolved
+        - record: gpu_demo_conflict_score
+          expr: |
+            clamp_max(
+              (gpu_demo_pending_workers / 4) + (gpu_demo_coordinator_zone * 0.5),
+              1.0
+            )
+
+    # -----------------------------------------------------------------------
+    # Group 3: Scheduler Latency (scheduling decision speed)
+    # -----------------------------------------------------------------------
+    - name: scheduler_health
+      interval: 30s
+      rules:
+        # Unschedulable pods across ml-demo namespace
+        - record: gpu_demo_unschedulable_pods
+          expr: |
+            count(
+              kube_pod_status_unschedulable{namespace="ml-demo"} == 1
+            ) or vector(0)
+
+        # Time pods have been in Pending state (indicates scheduling gridlock)
+        - record: gpu_demo_max_pending_duration_seconds
+          expr: |
+            max(
+              time() - kube_pod_created{namespace="ml-demo"}
+              * on(pod) group_left()
+              kube_pod_status_phase{namespace="ml-demo", phase="Pending"}
+            ) or vector(0)
+
+    # -----------------------------------------------------------------------
+    # Group 4: Alerting rules (useful to show in the talk)
+    # -----------------------------------------------------------------------
+    - name: gpu_scheduling_alerts
+      rules:
+        - alert: GPUUtilizationCriticallyLow
+          expr: gpu_demo_utilization_pct < 50
+          for: 1m
+          labels:
+            severity: warning
+            component: gpu-scheduler
+          annotations:
+            summary: "GPU utilization is {{ $value | humanize }}%"
+            description: |
+              GPU utilization has been below 50% for over 1 minute.
+              Likely cause: Kubeflow/Cilium scheduling conflict.
+              Coordinator may be in a different network zone than GPU workers.
+              Fix: Apply pod topology spread constraints to co-locate pods.
+
+        - alert: GPUWorkersCantReachCoordinator
+          expr: gpu_demo_coordinator_zone > 0 and gpu_demo_workers_running > 0
+          for: 30s
+          labels:
+            severity: critical
+            component: gpu-scheduler
+          annotations:
+            summary: "Coordinator in zone-b while GPU workers in zone-a"
+            description: |
+              Cross-zone scheduling detected: coordinator pod landed in zone-b,
+              GPU workers are in zone-a. Cilium network policy blocks this traffic.
+              GPUs are ALLOCATED but IDLE. Apply topology spread constraints.
