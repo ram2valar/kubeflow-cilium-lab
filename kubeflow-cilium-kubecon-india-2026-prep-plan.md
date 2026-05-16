@@ -115,6 +115,13 @@
 - [ ] One rehearsal with co-speaker (if confirmed): who speaks which section, who drives the demo
 - [ ] One dry run as if at the venue: same laptop, same network (or backup video)
 
+**To start a rehearsal run:**
+```bash
+bash scripts/open-dashboards.sh   # Grafana: localhost:3000  Prometheus: localhost:9090
+bash scripts/demo-before.sh       # Reproduce the conflict
+bash scripts/demo-after.sh        # Apply the fix
+```
+
 ### 4.2 Timing
 
 - [ ] Time each section; stay within session length (45 min talk + 10 min Q&A)
