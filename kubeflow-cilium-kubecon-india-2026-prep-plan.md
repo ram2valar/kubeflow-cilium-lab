@@ -92,8 +92,8 @@
 
 ### 3.2 Recorded backup
 
-- [x] `recordings/demo-after-final.mp4` — trimmed (first/last 10s removed), 3m11s, 13MB
-- [x] `recordings/demo-before.mp4` — raw recording, 10MB (kept as reference)
+- [x] `recordings/demo-after.mp4` — trimmed (first/last 10s removed), 3m11s, 13MB
+- [x] `recordings/demo-before.mp4` — raw recording, 10MB
 - [x] Manual recording approach (no automated recording scripts)
 
 ### 3.3 Demo environment
@@ -191,7 +191,7 @@ bash scripts/demo-after.sh        # Apply the fix
 |-------------|---------|--------|
 | GitHub repo (manifests, configs, README) | Before event; link in slides | ✅ https://github.com/ram2valar/kubeflow-cilium-lab |
 | Prometheus queries / Grafana dashboard | Phase 1; add to repo | ✅ In repo |
-| Recorded demo video | End of May (backup) | ✅ `demo-after-final.mp4` (3m11s) |
+| Recorded demo video | End of May (backup) | ✅ `demo-after.mp4` (3m11s) |
 | Final PPTX in repo | Before slide upload | ⏳ Pending animations/tweaks |
 | Slide upload to KubeCon portal | **10 June 2026** | ⏳ Pending |
 | Reproducibility / runbook | Before or after event | ✅ `scripts/setup.sh` + README |
