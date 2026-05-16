@@ -92,14 +92,13 @@
 
 ### 3.2 Recorded backup
 
-- [x] `recordings/demo-after.mp4` — trimmed (first/last 10s removed), 3m11s, 13MB
-- [x] `recordings/demo-before.mp4` — raw recording, 10MB
-- [x] Manual recording approach (no automated recording scripts)
+- [x] `recordings/demo-after.mp4`
+- [x] `recordings/demo-before.mp4`
 
 ### 3.3 Demo environment
 
 - [x] Live cluster: kind on MacBook Pro (KUBECONFIG: `~/.kube/config`, context: `kind-kubeflow-cilium-demo`)
-- [x] Fallback: recorded video `demo-after-final.mp4`
+- [x] Fallback: recorded video `demo-before.mp4` and `demo-after.mp4`
 - [x] Demo flow tested: `open-dashboards.sh` → `demo-before.sh` → `demo-after.sh`
 - [x] Cluster resources cleaned up (2026-05-16): ml-demo namespace deleted, Prometheus TSDB wiped — ready for rehearsal run
 
@@ -191,7 +190,7 @@ bash scripts/demo-after.sh        # Apply the fix
 |-------------|---------|--------|
 | GitHub repo (manifests, configs, README) | Before event; link in slides | ✅ https://github.com/ram2valar/kubeflow-cilium-lab |
 | Prometheus queries / Grafana dashboard | Phase 1; add to repo | ✅ In repo |
-| Recorded demo video | End of May (backup) | ✅ `demo-after.mp4` (3m11s) |
+| Recorded demo video | End of May (backup) | ✅ `demo-before.mp4` and `demo-after.mp4` |
 | Final PPTX in repo | Before slide upload | ⏳ Pending animations/tweaks |
 | Slide upload to KubeCon portal | **10 June 2026** | ⏳ Pending |
 | Reproducibility / runbook | Before or after event | ✅ `scripts/setup.sh` + README |
@@ -213,7 +212,7 @@ bash scripts/demo-after.sh        # Apply the fix
 
 | Risk | Mitigation |
 |------|------------|
-| Live demo fails (network, cluster down) | `recordings/demo-after-final.mp4` ready; switch in 10 seconds |
+| Live demo fails (network, cluster down) | `recordings/demo-before.mp4` and `recordings/demo-after.mp4` ready; switch in 10 seconds |
 | Session shorter than planned | Mark "optional" slides; be ready to drop Context/Research setup detail |
 | Co-speaker unavailable | One speaker can do full talk; other joins for Q&A if possible |
 | Laptop/AV issues | PDF of slides on USB; present from event machine if needed |
