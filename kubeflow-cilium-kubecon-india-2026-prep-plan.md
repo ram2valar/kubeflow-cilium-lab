@@ -101,6 +101,7 @@
 - [x] Live cluster: kind on MacBook Pro (KUBECONFIG: `~/.kube/config`, context: `kind-kubeflow-cilium-demo`)
 - [x] Fallback: recorded video `demo-after-final.mp4`
 - [x] Demo flow tested: `open-dashboards.sh` → `demo-before.sh` → `demo-after.sh`
+- [x] Cluster resources cleaned up (2026-05-16): ml-demo namespace deleted, Prometheus TSDB wiped — ready for rehearsal run
 
 ---
 
