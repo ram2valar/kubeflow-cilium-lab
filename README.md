@@ -84,10 +84,10 @@ designed so the problem is unambiguous and reproducible in under 30 minutes on a
 # 1. Bring up the full environment (~10 min)
 bash scripts/setup.sh
 
-# 2. Open Grafana + Prometheus dashboards
+# 2. Open Grafana + Prometheus dashboards (port-forwards to localhost)
 bash scripts/open-dashboards.sh
-#    Grafana:    http://localhost:30080  (admin/admin)
-#    Prometheus: http://localhost:30090
+#    Grafana:    http://localhost:3000  (admin/admin)
+#    Prometheus: http://localhost:9090
 #    Dashboard:  "GPU Scheduling Demo — Kubeflow + Cilium"
 
 # 3. Run the BEFORE demo — shows the scheduling conflict

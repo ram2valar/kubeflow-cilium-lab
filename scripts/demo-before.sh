@@ -109,7 +109,7 @@ step "5. Show Prometheus metrics — low GPU utilisation"
 #        loss with no connectivity error at all. Same root cause. Same fix.']
 # ---------------------------------------------------------
 echo ""
-echo -e "${BOLD}Key PromQL queries to run in Prometheus UI (http://localhost:30090):${NC}"
+echo -e "${BOLD}Key PromQL queries to run in Prometheus UI (http://localhost:9090):${NC}"
 echo ""
 echo -e "${BLUE}# GPU utilisation (expect ~40%):${NC}"
 echo "  gpu_demo_utilization_pct"
@@ -137,7 +137,7 @@ step "6. Show the active Cilium alert"
 #        The topology spread fix resolves both.']
 # ---------------------------------------------------------
 echo -e "${RED}Active alert expected: GPUWorkersCantReachCoordinator${NC}"
-echo "  Check: http://localhost:30090/alerts"
+echo "  Check: http://localhost:9090/alerts"
 echo ""
 echo -e "${BOLD}Summary of the problem:${NC}"
 echo "  ✗ Coordinator: zone-b (fell to CPU nodes — no GPU taint toleration)"
