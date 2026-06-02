@@ -2,18 +2,28 @@
 # BEFORE STATE: GPU Workload WITHOUT Topology Constraints
 #
 # GPU exclusivity is simulated via node taint (gpu=present:NoSchedule) +
-# nodeSelector (gpu: "true"). In a real cluster these pods would also carry
+# nodeSelector (gpu: "true"). In a real cluster these pods would carry
 # nvidia.com/gpu resource requests — the scheduling behaviour is identical.
 #
 # What goes wrong:
 #   - GPU workers land on zone-a nodes (only place with the gpu taint toleration)
-#   - Coordinator has NO affinity/toleration — often lands in zone-b
+#   - Coordinator has NO affinity/toleration — falls to zone-b (CPU-only nodes,
+#     no taint so the scheduler places it there freely)
 #   - Cilium deny-cross-zone-gpu-traffic policy blocks worker→coordinator comms
-#   - Workers hang waiting for coordinator; GPUs sit idle (~40% utilization)
+#   - Workers retry for ~2 minutes then fail; GPUs sit idle (~40% utilisation)
+#
+# NOTE ON pod label `zone: zone-b` on the coordinator:
+#   This label is set statically in the pod template to establish Cilium
+#   identity for policy enforcement. It matches where the coordinator will
+#   actually land: zone-b CPU nodes (since GPU nodes have a NoSchedule taint
+#   the coordinator cannot tolerate). In production, such zone labels are
+#   typically injected by a mutating admission webhook that reads the node's
+#   topology.kubernetes.io/zone label, or set explicitly in workload templates
+#   as security domain designations.
 # =============================================================================
 
 ---
-# Coordinator: schedules anywhere → often zone-b
+# Coordinator: no topology constraints → lands in zone-b (CPU nodes)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,10 +44,16 @@ spec:
       labels:
         app: ml-training
         role: coordinator
-        zone: zone-b   # Static label — matches Cilium policy selector for zone-b pods
+        # Cilium policy label: zone-b endpoints are blocked from receiving
+        # traffic from zone-a gpu-workers (see manifests/cilium/).
+        # Coordinator lands on zone-b because GPU nodes carry a NoSchedule
+        # taint that this pod has no toleration for.
+        zone: zone-b
+        scenario: before
     spec:
-      # No nodeAffinity, no topology constraint — scheduler places it anywhere,
-      # which in practice means zone-b (CPU nodes have no taint, GPU nodes do)
+      # No nodeAffinity, no topologySpreadConstraints, no GPU toleration.
+      # The scheduler places this pod on the path of least resistance:
+      # zone-b CPU nodes, which have no taints.
       containers:
         - name: coordinator
           image: busybox:1.36
@@ -46,7 +62,7 @@ spec:
             - -c
             - |
               echo "[coordinator] Starting on $(hostname)"
-              echo "[coordinator] Label zone=zone-b — Cilium will block GPU worker access"
+              echo "[coordinator] Pod label zone=zone-b — Cilium will block GPU worker access"
               # Loop keeps nc alive after each connection closes (busybox nc has no -k flag)
               while true; do
                 nc -l -p 9999
@@ -63,8 +79,8 @@ spec:
               memory: "128Mi"
 
 ---
-# GPU Workers: pinned to zone-a via taint toleration + nodeSelector
-# No topology constraint on coordinator → cross-zone conflict
+# GPU Workers: pinned to zone-a via taint toleration + nodeSelector.
+# No topology constraint on coordinator → cross-zone conflict.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -106,7 +122,7 @@ spec:
               COORDINATOR_SVC="ml-coordinator.ml-demo.svc.cluster.local"
               echo "[gpu-worker] $(hostname): Starting on GPU node (zone-a)"
               echo "[gpu-worker] Coordinator is in zone-b — Cilium blocks this connection"
-              echo "[gpu-worker] Waiting 20s for Cilium policy to fully initialize..."
+              echo "[gpu-worker] Waiting 20s for Cilium policy to fully initialise..."
               sleep 20
 
               RETRY=0
@@ -115,7 +131,7 @@ spec:
                 if nc -z -w 2 "${COORDINATOR_SVC}" 9999 2>/dev/null; then
                   echo "[gpu-worker] Connected to coordinator — training starting (GPU active)"
                   for i in $(seq 1 60); do
-                    echo "[gpu-worker] Training step ${i}/60 — GPU at 85% utilization"
+                    echo "[gpu-worker] Training step ${i}/60 — GPU at 85% utilisation"
                     sleep 2
                   done
                   echo "[gpu-worker] Training complete."

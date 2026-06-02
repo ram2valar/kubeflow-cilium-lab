@@ -161,6 +161,44 @@ data:
           ]
         },
         {
+          "id": 8,
+          "title": "Topology Zones Occupied",
+          "description": "Distinct availability zones holding scheduled ml-demo pods. Uses node topology labels — not pod labels. 1 = all co-located (resolved). 2 = cross-zone conflict.",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 4 },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "textMode": "value_and_name",
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "value": null, "color": "blue" },
+                  { "value": 1, "color": "green" },
+                  { "value": 2, "color": "red" }
+                ]
+              },
+              "color": { "mode": "thresholds" },
+              "mappings": [
+                { "type": "value", "options": { "0": { "text": "No pods scheduled" } } },
+                { "type": "value", "options": { "1": { "text": "✓ Same zone — OK" } } },
+                { "type": "value", "options": { "2": { "text": "✗ Cross-zone!" } } }
+              ]
+            }
+          },
+          "targets": [
+            {
+              "expr": "gpu_demo_zones_occupied",
+              "legendFormat": "Zones",
+              "refId": "A"
+            }
+          ]
+        },
+        {
           "id": 5,
           "title": "GPU Utilization Over Time",
           "type": "timeseries",
