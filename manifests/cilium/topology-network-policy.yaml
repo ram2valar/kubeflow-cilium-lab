@@ -1,15 +1,53 @@
 # =============================================================================
-# Cilium Network Policy: Topology-Aware Zone Isolation
+# Cilium Network Policy: Zone-Based Traffic Isolation
 #
-# This policy simulates what happens in a real cluster where Cilium enforces
-# network topology boundaries. GPU worker pods in zone-a can only efficiently
-# communicate with pods in the SAME zone. Cross-zone GPU-to-coordinator
-# communication is restricted (as would occur with strict network segmentation
-# or high-latency cross-rack links in a real datacenter).
+# This policy simulates a production configuration where Cilium enforces
+# network topology boundaries between availability zones.
 #
-# EFFECT: If a coordinator pod lands in zone-b while GPU workers are in zone-a,
-# the workers fail to establish the collective communication needed to start
-# training. GPUs remain allocated but idle.
+# WHEN DOES THIS EXIST IN PRODUCTION?
+#
+#   Zone-based CiliumNetworkPolicy configurations arise in several contexts:
+#
+#   1. Multi-tenant GPU clusters: security teams restrict cross-zone traffic
+#      to limit blast radius between tenants sharing GPU infrastructure.
+#
+#   2. Compliance and data locality: regulated ML workloads that must not
+#      transmit gradients or weights across zone (or region) boundaries.
+#
+#   3. Cost-driven CNI policies: teams that block cross-AZ egress at the CNI
+#      layer to prevent accidental large-scale data transfer charges.
+#
+#   4. Dedicated GPU pool isolation: GPU nodes secured so only explicitly
+#      labelled workloads can reach them, reducing resource contention risk.
+#
+# EFFECT IN THIS LAB:
+#
+#   GPU workers (pod label zone: zone-a) can only egress to endpoints also
+#   labelled zone: zone-a. The coordinator pod (zone: zone-b) is unreachable,
+#   so workers cannot establish the collective communication channel needed to
+#   start training. GPUs remain allocated but idle.
+#
+# NOTE ON POD ZONE LABELS:
+#
+#   The `zone` labels on pods in this lab (zone: zone-a / zone: zone-b) are
+#   set explicitly in the pod template spec to establish Cilium identity for
+#   policy enforcement. In production, such labels may be injected by a
+#   mutating admission webhook that reads the node's
+#   topology.kubernetes.io/zone label, or set deliberately in workload
+#   templates as security domain designations.
+#
+# THE ROOT CAUSE:
+#
+#   Kubeflow places the coordinator on a CPU node (zone-b) because GPU nodes
+#   carry a NoSchedule taint and the coordinator has no toleration. The
+#   coordinator therefore carries zone: zone-b. GPU workers are pinned to
+#   zone-a. Cilium enforces the boundary. Neither system is misconfigured in
+#   isolation — the conflict arises from their independent decisions.
+#
+# THE FIX (see manifests/after/):
+#
+#   nodeAffinity + topologySpreadConstraints co-locate coordinator and workers
+#   in zone-a. Cilium's intra-zone-a policy then permits all traffic.
 # =============================================================================
 
 ---
@@ -67,8 +105,12 @@ spec:
             io.kubernetes.pod.namespace: monitoring
 
 ---
-# Deny cross-zone GPU traffic (simulates datacenter rack isolation)
-# GPU workers cannot reach coordinators in the other zone, causing hang
+# Restrict GPU worker egress to zone-a only.
+#
+# GPU workers must reach the training coordinator to synchronise gradients.
+# Without topology spread constraints on the coordinator, it lands in zone-b.
+# This policy then blocks the worker→coordinator connection: GPUs are
+# allocated and the job appears Running, but training never progresses.
 apiVersion: "cilium.io/v2"
 kind: CiliumNetworkPolicy
 metadata:
@@ -79,7 +121,7 @@ spec:
     matchLabels:
       role: gpu-worker
   egress:
-    # GPU workers can only reach zone-a pods
+    # GPU workers can only reach zone-a pods (same zone as GPU nodes)
     - toEndpoints:
         - matchLabels:
             zone: zone-a

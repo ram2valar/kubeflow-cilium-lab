@@ -2,13 +2,18 @@
 # Prometheus Recording Rules — Kubeflow/Cilium GPU Scheduling Demo
 #
 # Since we use fake GPUs (no DCGM exporter), these rules derive GPU
-# utilization signals from pod scheduling state. They accurately represent
-# what you'd see with real DCGM metrics:
+# utilisation signals from pod scheduling and connectivity state. They
+# accurately represent what you would see with real DCGM metrics:
 #
-#   - gpu_demo_utilization_pct: ~40% when workers can't reach coordinator
-#                               ~85% when all pods co-located in zone-a
-#   - gpu_demo_idle_pct: inverse of utilization
-#   - gpu_demo_pending_workers: count of GPU workers stuck waiting
+#   gpu_demo_utilization_pct  ~40% when workers can't reach coordinator
+#                             ~85% when all pods co-located in zone-a
+#   gpu_demo_idle_pct         inverse of utilisation
+#   gpu_demo_pending_workers  GPU workers stuck waiting
+#   gpu_demo_zones_occupied   distinct topology zones holding ml-demo pods
+#                             (> 1 = cross-zone placement; works without
+#                             relying on Cilium-specific pod zone labels,
+#                             making it useful even in clusters without
+#                             hard zone-based network policies)
 # =============================================================================
 
 ---
@@ -22,7 +27,42 @@ metadata:
 spec:
   groups:
     # -----------------------------------------------------------------------
-    # Group 1: GPU Utilization (derived from pod connectivity state)
+    # Group 0: Cross-zone placement detection
+    #
+    # Uses node topology labels — not pod labels — so it detects the
+    # scheduling mismatch regardless of whether a hard Cilium zone policy is
+    # in place. In production clusters without zone-based CiliumNetworkPolicy,
+    # gpu_demo_zones_occupied > 1 is the first signal that cross-zone
+    # placement is causing NCCL AllReduce latency degradation or egress cost.
+    # -----------------------------------------------------------------------
+    - name: cross_zone_placement
+      interval: 15s
+      rules:
+        # Count of distinct topology zones occupied by scheduled ml-demo pods.
+        #
+        # Conflict state (before fix):  2
+        #   — coordinator on zone-b node, workers on zone-a nodes
+        # Resolved state (after fix):   1
+        #   — all pods co-located on zone-a nodes
+        # No pods scheduled yet:        0  (via `or vector(0)`)
+        #
+        # Join strategy:
+        #   kube_pod_info{node!=""} gives scheduled pods with their node name.
+        #   kube_node_labels enriches each pod with its node's zone label.
+        #   group by zone collapses all pods per zone to one series.
+        #   count() returns the number of distinct zones.
+        - record: gpu_demo_zones_occupied
+          expr: |
+            count(
+              group by (label_topology_kubernetes_io_zone) (
+                kube_pod_info{namespace="ml-demo", node!=""}
+                * on(node) group_left(label_topology_kubernetes_io_zone)
+                kube_node_labels{label_topology_kubernetes_io_zone!=""}
+              )
+            ) or vector(0)
+
+    # -----------------------------------------------------------------------
+    # Group 1: GPU Utilisation (derived from pod connectivity state)
     # -----------------------------------------------------------------------
     - name: gpu_utilization
       interval: 15s
@@ -53,9 +93,9 @@ spec:
               kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
             ) or vector(0)
 
-        # Simulated GPU utilization:
-        # - Running + connected: 85% (topology-aware, all in zone-a)
-        # - Running + stuck (before fix): 40% (allocated but idle)
+        # Simulated GPU utilisation:
+        # - Workers connected (Succeeded): 85% (topology-aware, all in zone-a)
+        # - Workers running but stuck (before fix): 40% (allocated but idle)
         # - No pods: 0%
         - record: gpu_demo_utilization_pct
           expr: |
@@ -77,8 +117,9 @@ spec:
     - name: scheduling_conflict_indicators
       interval: 15s
       rules:
-        # Cross-zone pod placement: coordinator in zone-b, workers in zone-a
-        # = scheduling conflict is active
+        # Coordinator in zone-b (detected via pod label set in workload template).
+        # 1 = coordinator is cross-zone from workers (conflict active)
+        # 0 = coordinator is in zone-a (resolved)
         - record: gpu_demo_coordinator_zone
           expr: |
             count(
@@ -87,7 +128,7 @@ spec:
               kube_pod_labels{namespace="ml-demo", label_role="coordinator", label_zone="zone-b"}
             ) or vector(0)
 
-        # Pending GPU pods: scheduler can't place them (conflict state)
+        # Pending GPU pods: scheduler cannot place them
         - record: gpu_demo_pending_workers
           expr: |
             count(
@@ -96,7 +137,7 @@ spec:
               kube_pod_labels{namespace="ml-demo", label_role="gpu-worker"}
             ) or vector(0)
 
-        # GPU allocation: how many GPUs are claimed vs actually computing
+        # GPU allocation count (requires real DCGM; placeholder for demo)
         - record: gpu_demo_allocated_count
           expr: |
             kube_pod_container_resource_requests{
@@ -107,7 +148,7 @@ spec:
             kube_pod_status_phase{namespace="ml-demo", phase="Running"}
             or vector(0)
 
-        # Scheduling conflict score: 1.0 = full conflict, 0.0 = resolved
+        # Composite conflict score: 1.0 = full conflict, 0.0 = resolved
         - record: gpu_demo_conflict_score
           expr: |
             clamp_max(
@@ -116,19 +157,18 @@ spec:
             )
 
     # -----------------------------------------------------------------------
-    # Group 3: Scheduler Latency (scheduling decision speed)
+    # Group 3: Scheduler Health
     # -----------------------------------------------------------------------
     - name: scheduler_health
       interval: 30s
       rules:
-        # Unschedulable pods across ml-demo namespace
         - record: gpu_demo_unschedulable_pods
           expr: |
             count(
               kube_pod_status_unschedulable{namespace="ml-demo"} == 1
             ) or vector(0)
 
-        # Time pods have been in Pending state (indicates scheduling gridlock)
+        # How long have pods been stuck in Pending (scheduling gridlock signal)
         - record: gpu_demo_max_pending_duration_seconds
           expr: |
             max(
@@ -138,7 +178,7 @@ spec:
             ) or vector(0)
 
     # -----------------------------------------------------------------------
-    # Group 4: Alerting rules (useful to show in the talk)
+    # Group 4: Alerting rules
     # -----------------------------------------------------------------------
     - name: gpu_scheduling_alerts
       rules:
@@ -149,12 +189,14 @@ spec:
             severity: warning
             component: gpu-scheduler
           annotations:
-            summary: "GPU utilization is {{ $value | humanize }}%"
+            summary: "GPU utilisation is {{ $value | humanize }}%"
             description: |
-              GPU utilization has been below 50% for over 1 minute.
-              Likely cause: Kubeflow/Cilium scheduling conflict.
-              Coordinator may be in a different network zone than GPU workers.
-              Fix: Apply pod topology spread constraints to co-locate pods.
+              GPU utilisation has been below 50% for over 1 minute.
+              Check gpu_demo_zones_occupied — if > 1, coordinator and workers
+              are in different topology zones, causing connectivity failure or
+              NCCL AllReduce latency degradation.
+              Fix: Apply pod topology spread constraints to co-locate all
+              ml-training pods in the same availability zone.
 
         - alert: GPUWorkersCantReachCoordinator
           expr: gpu_demo_coordinator_zone > 0 and gpu_demo_workers_running > 0
@@ -163,8 +205,10 @@ spec:
             severity: critical
             component: gpu-scheduler
           annotations:
-            summary: "Coordinator in zone-b while GPU workers in zone-a"
+            summary: "Coordinator in zone-b while GPU workers are in zone-a"
             description: |
               Cross-zone scheduling detected: coordinator pod landed in zone-b,
-              GPU workers are in zone-a. Cilium network policy blocks this traffic.
-              GPUs are ALLOCATED but IDLE. Apply topology spread constraints.
+              GPU workers are in zone-a. A zone-based Cilium network policy is
+              blocking worker-to-coordinator traffic. GPUs are ALLOCATED but IDLE.
+              Fix: Apply nodeAffinity and topologySpreadConstraints to the
+              coordinator Deployment to pin it to the same zone as GPU workers.
