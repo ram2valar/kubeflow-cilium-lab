@@ -117,8 +117,11 @@ kubectl get pods -n <namespace> -o json | \
 
 **NCCL-level diagnosis** (with `nccl-tests` on a real GPU cluster):
 ```bash
-# Run all_reduce_perf in the same-zone config and cross-zone config
-# Compare bus bandwidth — cross-zone will show lower bandwidth
+# NOTE: the following requires a real multi-GPU cluster with nccl-tests installed.
+# It does not apply to the kind demo lab (no real GPUs, no MPI runtime).
+
+# Run all_reduce_perf in the same-zone config and cross-zone config.
+# Compare bus bandwidth — cross-zone will show measurably lower bandwidth.
 mpirun -np <num-gpus> all_reduce_perf -b 1G -e 4G -f 2
 ```
 

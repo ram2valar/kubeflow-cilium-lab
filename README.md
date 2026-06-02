@@ -227,7 +227,7 @@ manifests/
 
 scripts/
 ├── setup.sh              Full cluster + monitoring setup
-├── open-dashboards.sh    Port-forward Grafana (30080) + Prometheus (30090)
+├── open-dashboards.sh    Port-forward Grafana (3000) + Prometheus (9090)
 ├── demo-before.sh        Reproduce the scheduling conflict
 ├── demo-after.sh         Apply the fix and show resolution
 ├── install-kfp.sh        Optional: install Kubeflow Pipelines (~8 GiB RAM)
