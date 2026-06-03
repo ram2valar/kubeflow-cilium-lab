@@ -10,6 +10,10 @@ networking:
 
 nodes:
   - role: control-plane
+    # Pin to Kubernetes 1.30 — the highest version supported by Cilium 1.15.6.
+    # kind 0.32.0 defaults to Kubernetes 1.36 which is outside Cilium 1.15.x
+    # support range (1.26–1.30). Without this pin, Cilium install will fail.
+    image: kindest/node:v1.30.10
     # Expose Grafana (30080) and Prometheus (30090) on localhost
     extraPortMappings:
       - containerPort: 30080
@@ -21,11 +25,15 @@ nodes:
 
   # Zone-A: GPU nodes (labels applied post-creation by setup.sh)
   - role: worker
+    image: kindest/node:v1.30.10
   - role: worker
+    image: kindest/node:v1.30.10
 
   # Zone-B: CPU-only nodes (labels applied post-creation by setup.sh)
   - role: worker
+    image: kindest/node:v1.30.10
   - role: worker
+    image: kindest/node:v1.30.10
 
 # NOTE: kind v1alpha4 does NOT support labels: under worker nodes.
 # Node labels (topology.kubernetes.io/zone, gpu, node-type) and
