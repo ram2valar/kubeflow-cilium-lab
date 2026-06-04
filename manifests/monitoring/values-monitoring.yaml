@@ -22,3 +22,7 @@ nodeExporter:
 kube-state-metrics:
   metricLabelsAllowlist:
     - "pods=[zone,role,scenario,app]"
+    # Required for gpu_demo_zones_occupied: exposes topology.kubernetes.io/zone
+    # as label_topology_kubernetes_io_zone in kube_node_labels.
+    # kube-state-metrics v2.13+ requires explicit allowlisting for node labels.
+    - "nodes=[topology.kubernetes.io/zone]"

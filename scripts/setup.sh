@@ -116,10 +116,20 @@ info "Detected platform: ${PLATFORM}"
 info "Pulling Cilium image for ${PLATFORM}..."
 docker pull --platform "${PLATFORM}" "quay.io/cilium/cilium:v${CILIUM_VERSION}"
 
-info "Loading Cilium image into kind nodes (avoids per-node pulls)..."
-kind load docker-image "quay.io/cilium/cilium:v${CILIUM_VERSION}" \
-  --name kubeflow-cilium-demo
-success "Cilium image loaded into all kind nodes."
+info "Loading Cilium image into kind nodes (avoids registry pulls)..."
+# kind 0.32.0 uses 'ctr images import --all-platforms' internally. On Apple
+# Silicon this fails because the amd64 layers are absent from the local Docker
+# content store (we pulled only --platform linux/arm64). The load is an
+# optimisation only — if it fails, Cilium Helm will pull from quay.io on each
+# node at install time (requires internet during setup, not during demo).
+if kind load docker-image "quay.io/cilium/cilium:v${CILIUM_VERSION}" \
+    --name kubeflow-cilium-demo 2>/dev/null; then
+  success "Cilium image pre-loaded into all kind nodes."
+else
+  warn "Image pre-load skipped (multi-arch manifest issue with kind 0.32.0 on arm64)."
+  warn "Cilium will pull quay.io/cilium/cilium:v${CILIUM_VERSION} per-node at Helm install."
+  warn "Internet access required during this setup run."
+fi
 
 helm upgrade --install cilium cilium/cilium \
   --version "${CILIUM_VERSION}" \

@@ -70,7 +70,14 @@ kubectl delete job ml-gpu-workers-before -n ml-demo --ignore-not-found
 kubectl delete job ml-gpu-workers-after -n ml-demo --ignore-not-found
 kubectl delete deployment ml-coordinator -n ml-demo --ignore-not-found
 kubectl delete service ml-coordinator -n ml-demo --ignore-not-found
-sleep 5
+
+# Wait for all BEFORE pods to fully terminate before applying the new workload.
+# Without this, old Failed pods appear in the zone output during step 4,
+# showing zone-b ✗ entries that confuse the before/after comparison on stage.
+echo "Waiting for old pods to terminate..."
+kubectl wait --for=delete pod -l app=ml-training -n ml-demo \
+  --timeout=30s 2>/dev/null || true
+sleep 2
 
 # ---------------------------------------------------------
 step "3. Apply the fixed workload"

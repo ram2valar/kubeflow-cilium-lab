@@ -164,13 +164,15 @@ spec:
             (kube_pod_status_phase{namespace="ml-demo", phase="Running"} == 1)
             or vector(0)
 
-        # Composite conflict score: 1.0 = full conflict, 0.0 = resolved
+        # Conflict score: 1.0 = conflict active, 0.0 = resolved.
+        # Driven solely by coordinator zone placement — the definitive signal.
+        # Previous formula added pending_workers/4, but after the == 1 phase
+        # filter fix, workers in Running-but-blocked state are not Pending, so
+        # the term was always 0, giving BEFORE = 0.5 instead of 1.0. Simplified
+        # to a clean binary keyed on coordinator_zone.
         - record: gpu_demo_conflict_score
           expr: |
-            clamp_max(
-              (gpu_demo_pending_workers / 4) + (gpu_demo_coordinator_zone * 0.5),
-              1.0
-            )
+            clamp_max(gpu_demo_coordinator_zone, 1.0)
 
     # -----------------------------------------------------------------------
     # Group 3: Scheduler Health
