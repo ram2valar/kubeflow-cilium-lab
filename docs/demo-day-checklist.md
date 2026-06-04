@@ -183,7 +183,7 @@ gpu_demo_zones_occupied          # BEFORE: 2  AFTER: 1
 # Supporting evidence:
 gpu_demo_utilization_pct         # BEFORE: 40  AFTER: 85
 gpu_demo_coordinator_zone        # BEFORE: 1   AFTER: 0
-gpu_demo_conflict_score          # BEFORE: 0.5 AFTER: 0
+gpu_demo_conflict_score          # BEFORE: 1.0 AFTER: 0
 ```
 
 ---
