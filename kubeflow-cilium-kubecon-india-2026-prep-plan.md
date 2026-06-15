@@ -2,8 +2,9 @@
 
 **Talk:** When Kubeflow Fights Cilium: Debugging 60% Idle GPUs in Kubernetes  
 **Event:** KubeCon India 2026 | **Dates:** 18–19 June 2026  
+**Session (CONFIRMED):** Friday, 19 June 2026, 12:40–1:10pm — **30-minute slot**  
 **Slide upload deadline:** 10 June 2026  
-**Session length:** Assume 45–55 minutes (confirm with organizers)
+**Slides uploaded to Sched:** ✅ (file "Kubecon India 2026 Kubeflow Cilium", PPTX)
 
 ---
 
@@ -15,7 +16,7 @@
 | 2 | Slide outline & first draft | Mid-May 2026 | ✅ COMPLETE |
 | 3 | Demo script & recorded backup | End of May 2026 | ✅ COMPLETE |
 | 4 | Rehearsals & timing | 1–7 June 2026 | ⏳ PENDING |
-| 5 | Final slides & upload | **10 June 2026** | ⏳ PENDING |
+| 5 | Final slides & upload | **10 June 2026** | ✅ COMPLETE (uploaded to Sched) |
 | 6 | Event week prep | 10–17 June 2026 | ⏳ PENDING |
 
 ---
@@ -133,7 +134,7 @@ bash scripts/demo-after.sh        # Apply the fix
 
 ### 4.2 Timing
 
-- [ ] Time each section; stay within session length (45 min talk + 10 min Q&A)
+- [ ] Time each section; stay within the **30-minute slot** (≈22–24 min talk + demo, ~5 min Q&A) — see `docs/demo-day-checklist.md` T+timing
 - [ ] If over: cut Context or Research setup detail; keep problem → cause → fix → demo → takeaways
 - [ ] Plan buffer: "If demo fails at minute 25, switch to recorded video and continue from Results slide"
 
@@ -158,10 +159,10 @@ bash scripts/demo-after.sh        # Apply the fix
 
 ### 5.2 Export and upload
 
-- [ ] Push final PPTX to `ram2valar/kubeflow-cilium-lab` GitHub repo
+- [x] Push final PPTX to `ram2valar/kubeflow-cilium-lab` GitHub repo
 - [ ] Export as PDF (backup)
-- [ ] **Upload to KubeCon portal by 10 June 2026**
-- [ ] Confirm receipt (email or portal confirmation)
+- [x] **Uploaded to Sched/KubeCon portal** (file "Kubecon India 2026 Kubeflow Cilium", PPTX)
+- [x] Upload confirmed in portal (file listed under session)
 
 ### 5.3 Backup copy
 
@@ -175,7 +176,7 @@ bash scripts/demo-after.sh        # Apply the fix
 
 ### 6.1 Logistics
 
-- [ ] Confirm day and time of session (18 or 19 June)
+- [x] Day/time CONFIRMED: Friday 19 June 2026, 12:40–1:10pm (30-min slot)
 - [ ] Confirm room and AV: HDMI/USB-C, mic, clicker
 - [ ] Plan arrival at venue with buffer (e.g. 30 min before session)
 
@@ -236,9 +237,9 @@ bash scripts/demo-after.sh        # Apply the fix
 - ~~**Mid-May 2026:** First full slide draft; demo script written.~~ ✅
 - ~~**End May 2026:** Rehearsals started; recorded backup demo done.~~ ✅
 - **1–7 June 2026:** Final rehearsals; timing locked.
-- **10 June 2026:** **Slides uploaded. ← HARD DEADLINE**
+- ~~**10 June 2026:** Slides uploaded to Sched.~~ ✅ DONE
 - **10–17 June 2026:** Logistics and tech check.
-- **18–19 June 2026:** **KubeCon India 2026 – deliver the session.**
+- **Friday 19 June 2026, 12:40–1:10pm:** **Deliver the session (30-min slot).**
 
 ---
 
