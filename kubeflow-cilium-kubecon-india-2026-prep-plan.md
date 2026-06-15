@@ -66,16 +66,26 @@
 
 - [x] Built using KubeCon India 2026 branded PowerPoint template
 - [x] File: `/Users/ranagara/Documents/cncf-europe-india-2026-proposals/kubecon-india-2026-kubeflow-cilium.pptx`
-- [x] 14+ slides (count increased after image alignment)
-- [x] Speaker: Ramkumar Nagaraj | Sr. Computer Scientist, Adobe
-- [x] Slide order: Title → Agenda → §1 Problem → Topology → Conflict → Demo BEFORE → §2 Root Cause → Cilium Policy → Alert → §3 Fix → YAML Fix → Demo AFTER → Before/After Numbers → Takeaways+Q&A
+- [x] 19 slides (added "Beyond the Hard Block: The Production Spectrum" slide; count also increased after image alignment)
+- [x] Speakers: Ramkumar Nagaraj | Sr. Computer Scientist, Adobe **+ Bingi Narasimha Karthik | Computer Scientist II, Adobe** (co-speaker, on title slide)
+- [x] Slide order: Title → Agenda → §1 Problem → Topology → Conflict → Demo BEFORE → §2 Root Cause → Cilium Policy → Alert → §3 Fix → YAML Fix → Demo AFTER → Before/After Numbers → Arc Chart → Production Spectrum → Takeaways → Q&A
 - [x] Repo link on last slide updated to: `github.com/ram2valar/kubeflow-cilium-lab`
 - [x] Content QA passed
 
 ### 2.2 In progress
 
-- [ ] Animations + storytelling tweaks (in progress)
+- [x] Animations — sequential fade-in-on-click reveals added to 9 content slides (2, 4, 5, 9, 10, 13, 15, 17, 19) on 2026-06-15; titles/dividers/image slides/Questions left static. **Verify build pacing in Slideshow mode (PDF can't show animations).**
+- [ ] Storytelling tweaks (optional, ongoing)
 - [ ] Final PPTX to be pushed to GitHub repo once done
+
+### 2.3 Content corrections (2026-06-15)
+
+- [x] Slide 15 (Before/After Numbers): fixed training progress `60/60` → `30/30 steps` (matches 30-step demo loop)
+- [x] Slide 10 (Smoking Gun): added `gpu_demo_zones_occupied returns 2` to Prometheus signals
+- [x] Slide 18 (Takeaways): takeaway 4 now names the 3 production scenarios
+- [x] New slide 17 "Beyond the Hard Block: The Production Spectrum" — hard Cilium block / cross-zone NCCL latency / cross-AZ egress cost, one fix for all three (from `docs/production-context.md`)
+- [x] Title slide: added co-speaker Bingi Narasimha Karthik
+- [x] Last slide (Questions): github link centered at top + two QR profile cards side by side (Ramkumar left, Karthik right). Note: QR card JPEGs have black letterboxing; Ramkumar's card headline shows a placeholder ("Cloud hmmmmmm…") — regenerate if desired
 
 ---
 
@@ -111,7 +121,7 @@
 ### 4.1 Rehearsals
 
 - [ ] Full run-through at least 2 times (slides + live demo)
-- [ ] One rehearsal with co-speaker (if confirmed): who speaks which section, who drives the demo
+- [ ] One rehearsal with co-speaker Karthik: who speaks which section, who drives the demo
 - [ ] One dry run as if at the venue: same laptop, same network (or backup video)
 
 **To start a rehearsal run:**
@@ -142,7 +152,7 @@ bash scripts/demo-after.sh        # Apply the fix
 
 ### 5.1 Slide polish
 
-- [ ] Finish animations + storytelling tweaks
+- [x] Animations done (2026-06-15); storytelling tweaks optional/ongoing
 - [ ] Confirm all links working (GitHub repo URL correct on last slide ✓)
 - [ ] Speaker notes with demo cues and timing
 
@@ -201,9 +211,9 @@ bash scripts/demo-after.sh        # Apply the fix
 
 | Item | Owner | Notes |
 |------|-------|-------|
-| Co-speaker confirmation | Ramkumar | Not yet confirmed |
-| Slide animations + storytelling tweaks | Ramkumar | In progress |
-| Rehearsals | Ramkumar + co-speaker | 1–7 June |
+| Co-speaker | Ramkumar | ✅ Confirmed: Bingi Narasimha Karthik (Computer Scientist II, Adobe); on title slide |
+| Slide animations | Ramkumar | ✅ Done 2026-06-15 (verify pacing in Slideshow); storytelling tweaks optional |
+| Rehearsals | Ramkumar + Karthik | 1–7 June |
 | Slide upload | Ramkumar | Hard deadline: 10 June |
 
 ---
@@ -214,7 +224,7 @@ bash scripts/demo-after.sh        # Apply the fix
 |------|------------|
 | Live demo fails (network, cluster down) | `recordings/demo-before.mp4` and `recordings/demo-after.mp4` ready; switch in 10 seconds |
 | Session shorter than planned | Mark "optional" slides; be ready to drop Context/Research setup detail |
-| Co-speaker unavailable | One speaker can do full talk; other joins for Q&A if possible |
+| Co-speaker (Karthik) unavailable | Either speaker can do full talk solo; other joins for Q&A if possible |
 | Laptop/AV issues | PDF of slides on USB; present from event machine if needed |
 | kind cluster not running at venue | All workloads scripted; `setup.sh` + `demo-before.sh` + `demo-after.sh` reproducible in ~10 min |
 
@@ -232,4 +242,4 @@ bash scripts/demo-after.sh        # Apply the fix
 
 ---
 
-*Last updated: 2026-05-16*
+*Last updated: 2026-06-15*
