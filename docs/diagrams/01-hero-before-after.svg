@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1600" height="980" fill="#ffffff"/>
+
+  <defs>
+    <marker id="ar" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#5a6b7b"/>
+    </marker>
+    <marker id="arRed" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#c5221f"/>
+    </marker>
+    <marker id="arGreen" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#137333"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="52" font-size="30" font-weight="bold" fill="#11181c">When Kubeflow Fights Cilium — Why GPUs Sit Idle</text>
+  <text x="40" y="80" font-size="16" fill="#5a6b7b">5-node cluster: control-plane + zone-a (2 GPU nodes, gpu=true, taint gpu=present:NoSchedule) + zone-b (2 CPU nodes, gpu=false)</text>
+
+  <!-- ============ BEFORE PANEL ============ -->
+  <rect x="40" y="110" width="740" height="840" fill="#fafbfc" stroke="#d0d7de" rx="12"/>
+  <rect x="40" y="110" width="740" height="56" fill="#c5221f" rx="12"/>
+  <rect x="40" y="140" width="740" height="26" fill="#c5221f"/>
+  <text x="410" y="147" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">BEFORE — broken: GPUs allocated but idle</text>
+
+  <!-- zone-a container (BEFORE) -->
+  <rect x="68" y="190" width="684" height="270" fill="#e6f4ea" stroke="#137333" rx="10"/>
+  <text x="86" y="218" font-size="16" font-weight="bold" fill="#137333">zone-a (GPU nodes)</text>
+
+  <!-- 4 gpu-worker boxes -->
+  <rect x="90" y="240" width="300" height="90" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="240" y="278" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="240" y="300" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="430" y="240" width="300" height="90" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="580" y="278" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="580" y="300" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="90" y="350" width="300" height="90" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="240" y="388" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="240" y="410" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="430" y="350" width="300" height="90" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="580" y="388" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="580" y="410" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <!-- zone-b container (BEFORE) -->
+  <rect x="68" y="560" width="684" height="130" fill="#fde8e7" stroke="#c5221f" rx="10"/>
+  <text x="86" y="588" font-size="16" font-weight="bold" fill="#c5221f">zone-b (CPU nodes)</text>
+
+  <rect x="260" y="600" width="300" height="76" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="410" y="634" font-size="15" fill="#11181c" text-anchor="middle">coordinator</text>
+  <text x="410" y="656" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-b</text>
+
+  <!-- DROP arrow workers -> coordinator -->
+  <line x1="410" y1="460" x2="410" y2="598" stroke="#c5221f" stroke-width="2.5" stroke-dasharray="7,5" marker-end="url(#arRed)"/>
+  <rect x="430" y="478" width="316" height="64" fill="#ffffff" stroke="#c5221f" rx="8"/>
+  <text x="446" y="503" font-size="15" font-weight="bold" fill="#c5221f">Cilium DROP ✗</text>
+  <text x="446" y="525" font-size="13" fill="#5a6b7b">deny-cross-zone-gpu-traffic</text>
+
+  <!-- cause caption -->
+  <text x="68" y="724" font-size="13" fill="#5a6b7b">coordinator has NO GPU-taint toleration → falls to zone-b</text>
+
+  <!-- result box BEFORE -->
+  <rect x="68" y="740" width="684" height="186" fill="#eef4ff" stroke="#1a73e8" rx="8"/>
+  <text x="86" y="780" font-size="15" font-weight="bold" fill="#11181c">gpu_demo_utilization_pct ≈ 40%</text>
+  <text x="86" y="808" font-size="15" fill="#11181c">zones_occupied = 2</text>
+  <text x="86" y="836" font-size="15" fill="#11181c">conflict_score = 1</text>
+  <text x="86" y="884" font-size="16" font-weight="bold" fill="#c5221f">→ GPUs ALLOCATED but IDLE</text>
+
+  <!-- ============ AFTER PANEL ============ -->
+  <rect x="820" y="110" width="740" height="840" fill="#fafbfc" stroke="#d0d7de" rx="12"/>
+  <rect x="820" y="110" width="740" height="56" fill="#137333" rx="12"/>
+  <rect x="820" y="140" width="740" height="26" fill="#137333"/>
+  <text x="1190" y="147" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">AFTER — fixed: training runs at full speed</text>
+
+  <!-- zone-a container (AFTER) -->
+  <rect x="848" y="190" width="684" height="380" fill="#e6f4ea" stroke="#137333" rx="10"/>
+  <text x="866" y="218" font-size="16" font-weight="bold" fill="#137333">zone-a (GPU nodes)</text>
+
+  <!-- 4 gpu-worker boxes -->
+  <rect x="870" y="240" width="300" height="86" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="1020" y="276" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="1020" y="298" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="1210" y="240" width="300" height="86" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="1360" y="276" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="1360" y="298" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="870" y="344" width="300" height="86" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="1020" y="380" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="1020" y="402" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <rect x="1210" y="344" width="300" height="86" fill="#ffffff" stroke="#5a6b7b" rx="8"/>
+  <text x="1360" y="380" font-size="15" fill="#11181c" text-anchor="middle">gpu-worker</text>
+  <text x="1360" y="402" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <!-- coordinator now in zone-a -->
+  <rect x="1040" y="468" width="300" height="86" fill="#ffffff" stroke="#137333" stroke-width="2" rx="8"/>
+  <text x="1190" y="504" font-size="15" font-weight="bold" fill="#11181c" text-anchor="middle">coordinator</text>
+  <text x="1190" y="526" font-size="13" fill="#5a6b7b" text-anchor="middle">zone=zone-a</text>
+
+  <!-- ALLOW arrow worker -> coordinator -->
+  <line x1="1020" y1="430" x2="1130" y2="466" stroke="#137333" stroke-width="2.5" marker-end="url(#arGreen)"/>
+  <rect x="848" y="466" width="180" height="64" fill="#ffffff" stroke="#137333" rx="8"/>
+  <text x="864" y="491" font-size="15" font-weight="bold" fill="#137333">Cilium ALLOW ✓</text>
+  <text x="864" y="513" font-size="13" fill="#5a6b7b">intra-zone-a</text>
+
+  <!-- zone-b greyed empty -->
+  <rect x="848" y="600" width="684" height="90" fill="#f1f3f5" stroke="#aab2bd" rx="10"/>
+  <text x="866" y="628" font-size="16" font-weight="bold" fill="#aab2bd">zone-b (CPU nodes)</text>
+  <text x="1190" y="660" font-size="14" fill="#aab2bd" text-anchor="middle">empty — no ML pods scheduled here</text>
+
+  <!-- cause caption AFTER -->
+  <text x="848" y="724" font-size="13" fill="#5a6b7b">FIX: nodeAffinity(zone-a) + GPU toleration +</text>
+  <text x="848" y="742" font-size="13" fill="#5a6b7b">topologySpread → all in zone-a</text>
+
+  <!-- result box AFTER -->
+  <rect x="848" y="756" width="684" height="170" fill="#eef4ff" stroke="#1a73e8" rx="8"/>
+  <text x="866" y="796" font-size="15" font-weight="bold" fill="#11181c">gpu_demo_utilization_pct ≈ 85%</text>
+  <text x="866" y="824" font-size="15" fill="#11181c">zones_occupied = 1</text>
+  <text x="866" y="852" font-size="15" fill="#11181c">conflict_score = 0</text>
+  <text x="866" y="900" font-size="16" font-weight="bold" fill="#137333">→ training RUNS</text>
+</svg>

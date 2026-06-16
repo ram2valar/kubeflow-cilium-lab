@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1180" viewBox="0 0 1600 1180" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1600" height="1180" fill="#ffffff"/>
+
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#5a6b7b"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="52" font-size="30" font-weight="bold" fill="#11181c">Stage Run-of-Show — 30-Minute KubeCon Demo</text>
+  <text x="40" y="80" font-size="16" fill="#5a6b7b">Vertical timeline · T+ markers down the spine · phases right · timing callouts · failover plan</text>
+
+  <!-- Timeline spine -->
+  <line x1="120" y1="120" x2="120" y2="1060" stroke="#5a6b7b" stroke-width="3"/>
+
+  <!-- ===== T-prep ===== -->
+  <circle cx="120" cy="150" r="7" fill="#1a73e8"/>
+  <text x="108" y="155" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T-prep</text>
+  <rect x="160" y="118" width="1020" height="74" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="142" font-size="16" font-weight="bold" fill="#11181c">PREP (before doors open)</text>
+  <text x="174" y="164" font-size="13" fill="#11181c"><tspan x="174" dy="0">kind get clusters · open-dashboards.sh (Grafana 3000 / Prom 9090)</tspan><tspan x="174" dy="17">reset-demo.sh · confirm baseline gauge reads 0</tspan></text>
+
+  <!-- ===== T+0:00 INTRO ===== -->
+  <circle cx="120" cy="245" r="7" fill="#1a73e8"/>
+  <text x="108" y="250" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+0:00</text>
+  <rect x="160" y="218" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="242" font-size="16" font-weight="bold" fill="#11181c">INTRO (2m) — the problem</text>
+  <text x="174" y="263" font-size="13" fill="#11181c">Slides: 60% idle GPUs, what the audience will see live.</text>
+
+  <!-- ===== T+2:00 TOPOLOGY ===== -->
+  <circle cx="120" cy="330" r="7" fill="#1a73e8"/>
+  <text x="108" y="335" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+2:00</text>
+  <rect x="160" y="303" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="327" font-size="16" font-weight="bold" fill="#11181c">TOPOLOGY slide</text>
+  <text x="174" y="348" font-size="13" fill="#11181c">GPUs only in zone-a (tainted); coordinator has no affinity.</text>
+
+  <!-- ===== T+5:00 RUN demo-before ===== -->
+  <circle cx="120" cy="430" r="7" fill="#1a73e8"/>
+  <text x="108" y="435" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+5:00</text>
+  <rect x="160" y="395" width="1020" height="98" fill="#eef4ff" stroke="#1a73e8" rx="10"/>
+  <text x="174" y="419" font-size="16" font-weight="bold" fill="#11181c">RUN demo-before.sh</text>
+  <text x="174" y="441" font-size="13" fill="#11181c"><tspan x="174" dy="0">deploy (40s) → coordinator lands zone-b ✗</tspan><tspan x="174" dy="17">worker logs 'CANNOT REACH'</tspan><tspan x="174" dy="17">Grafana 40%, zones=2</tspan></text>
+
+  <!-- Callout WINDOW A -->
+  <line x1="1180" y1="444" x2="1244" y2="444" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+  <rect x="1190" y="398" width="370" height="118" fill="#fff4e5" stroke="#b06000" rx="10"/>
+  <text x="1204" y="422" font-size="14" font-weight="bold" fill="#b06000">⚠ TIMING A</text>
+  <text x="1204" y="443" font-size="13" fill="#11181c"><tspan x="1204" dy="0">GPUWorkersCantReachCoordinator only FIRES</tspan><tspan x="1204" dy="17">~30–120s after deploy (workers fail ~120s</tspan><tspan x="1204" dy="17">and it clears).</tspan><tspan x="1204" dy="17">Reach /alerts promptly.</tspan></text>
+
+  <!-- ===== T+8:30 ROOT-CAUSE ===== -->
+  <circle cx="120" cy="555" r="7" fill="#1a73e8"/>
+  <text x="108" y="560" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+8:30</text>
+  <rect x="160" y="528" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="552" font-size="16" font-weight="bold" fill="#11181c">ROOT-CAUSE slides (~6m)</text>
+  <text x="174" y="573" font-size="13" fill="#11181c">Scheduling + Cilium cross-zone policy → why workers can't reach.</text>
+
+  <!-- ===== T+14:30 RUN demo-after ===== -->
+  <circle cx="120" cy="655" r="7" fill="#1a73e8"/>
+  <text x="108" y="660" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+14:30</text>
+  <rect x="160" y="620" width="1020" height="98" fill="#eef4ff" stroke="#1a73e8" rx="10"/>
+  <text x="174" y="644" font-size="16" font-weight="bold" fill="#11181c">RUN demo-after.sh</text>
+  <text x="174" y="666" font-size="13" fill="#11181c"><tspan x="174" dy="0">show 3 YAML fixes → all pods zone-a ✓</tspan><tspan x="174" dy="17">logs 'GPU ~85%'</tspan><tspan x="174" dy="17">Grafana 85%, zones=1</tspan></text>
+
+  <!-- Callout WINDOW B -->
+  <line x1="1180" y1="669" x2="1244" y2="669" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+  <rect x="1190" y="623" width="370" height="118" fill="#fff4e5" stroke="#b06000" rx="10"/>
+  <text x="1204" y="647" font-size="14" font-weight="bold" fill="#b06000">⚠ TIMING B</text>
+  <text x="1204" y="668" font-size="13" fill="#11181c"><tspan x="1204" dy="0">utilization READS 40% until Job completes</tspan><tspan x="1204" dy="17">+ re-scrape (~15–60s).</tspan><tspan x="1204" dy="17">Narrate placement + logs;</tspan><tspan x="1204" dy="17">don't stare at the gauge.</tspan></text>
+
+  <!-- ===== T+17:00 PRODUCTION SPECTRUM ===== -->
+  <circle cx="120" cy="780" r="7" fill="#1a73e8"/>
+  <text x="108" y="785" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+17:00</text>
+  <rect x="160" y="753" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="777" font-size="16" font-weight="bold" fill="#11181c">PRODUCTION SPECTRUM slide (3m)</text>
+  <text x="174" y="798" font-size="13" fill="#11181c">Same root cause, silent NCCL latency / egress cost.</text>
+
+  <!-- ===== T+20:00 TAKEAWAYS ===== -->
+  <circle cx="120" cy="865" r="7" fill="#1a73e8"/>
+  <text x="108" y="870" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+20:00</text>
+  <rect x="160" y="838" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="862" font-size="16" font-weight="bold" fill="#11181c">TAKEAWAYS (4m)</text>
+  <text x="174" y="883" font-size="13" fill="#11181c">Topology constraints + network-policy awareness for GPU jobs.</text>
+
+  <!-- ===== T+24:00 Q&A ===== -->
+  <circle cx="120" cy="950" r="7" fill="#1a73e8"/>
+  <text x="108" y="955" font-size="15" font-weight="bold" fill="#11181c" text-anchor="end">T+24:00</text>
+  <rect x="160" y="923" width="1020" height="58" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="174" y="947" font-size="16" font-weight="bold" fill="#11181c">Q&amp;A (5m)</text>
+  <text x="174" y="968" font-size="13" fill="#11181c">Buffer for overrun; point to repo and recordings.</text>
+
+  <!-- Bottom FAILURE -> RECOVERY -->
+  <rect x="160" y="1010" width="1400" height="118" fill="#fde8e7" stroke="#c5221f" rx="10"/>
+  <text x="180" y="1040" font-size="18" font-weight="bold" fill="#c5221f">FAILURE → RECOVERY</text>
+  <text x="180" y="1066" font-size="13" fill="#11181c"><tspan x="180" dy="0">Any doubt at timing windows A/B, Docker down, dead port-forward, or no-conflict placement →</tspan><tspan x="180" dy="17">SWITCH to recordings/demo-before.mp4 / demo-after.mp4 (~10s switch, audience won't notice).</tspan><tspan x="180" dy="17">Keep both videos pre-loaded and paused on first frame before the talk starts.</tspan></text>
+</svg>

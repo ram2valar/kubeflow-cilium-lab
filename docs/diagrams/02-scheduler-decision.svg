@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1060" viewBox="0 0 1600 1060" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1600" height="1060" fill="#ffffff"/>
+
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#5a6b7b"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="52" font-size="30" font-weight="bold" fill="#11181c">Scheduler decision: placing the COORDINATOR pod</text>
+  <text x="40" y="80" font-size="16" fill="#5a6b7b">A filter funnel — how predicates narrow the candidate nodes. BEFORE vs AFTER.</text>
+
+  <!-- Node chips legend row (shared) -->
+  <!-- BEFORE column header -->
+  <rect x="40" y="100" width="740" height="40" fill="#c5221f" rx="6"/>
+  <text x="410" y="127" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">BEFORE — coordinator: no toleration / no affinity</text>
+
+  <!-- AFTER column header -->
+  <rect x="820" y="100" width="740" height="40" fill="#137333" rx="6"/>
+  <text x="1190" y="127" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">AFTER — coordinator: 3 fixes</text>
+
+  <!-- ===================== BEFORE NODE CHIPS ===================== -->
+  <!-- cp -->
+  <rect x="50" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="115" y="176" font-size="13" fill="#11181c" text-anchor="middle">cp</text>
+  <text x="115" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">control-plane</text>
+  <!-- w1 -->
+  <rect x="194" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="259" y="174" font-size="13" fill="#11181c" text-anchor="middle">w1  zone-a gpu</text>
+  <text x="259" y="194" font-size="11" fill="#c5221f" text-anchor="middle" font-weight="bold">TAINT</text>
+  <!-- w2 -->
+  <rect x="338" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="403" y="174" font-size="13" fill="#11181c" text-anchor="middle">w2  zone-a gpu</text>
+  <text x="403" y="194" font-size="11" fill="#c5221f" text-anchor="middle" font-weight="bold">TAINT</text>
+  <!-- w3 -->
+  <rect x="482" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="547" y="176" font-size="13" fill="#11181c" text-anchor="middle">w3</text>
+  <text x="547" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">zone-b</text>
+  <!-- w4 -->
+  <rect x="626" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="691" y="176" font-size="13" fill="#11181c" text-anchor="middle">w4</text>
+  <text x="691" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">zone-b</text>
+
+  <!-- ===================== AFTER NODE CHIPS ===================== -->
+  <!-- cp -->
+  <rect x="830" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="895" y="176" font-size="13" fill="#11181c" text-anchor="middle">cp</text>
+  <text x="895" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">control-plane</text>
+  <!-- w1 -->
+  <rect x="974" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="1039" y="174" font-size="13" fill="#11181c" text-anchor="middle">w1  zone-a gpu</text>
+  <text x="1039" y="194" font-size="11" fill="#c5221f" text-anchor="middle" font-weight="bold">TAINT</text>
+  <!-- w2 -->
+  <rect x="1118" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="1183" y="174" font-size="13" fill="#11181c" text-anchor="middle">w2  zone-a gpu</text>
+  <text x="1183" y="194" font-size="11" fill="#c5221f" text-anchor="middle" font-weight="bold">TAINT</text>
+  <!-- w3 -->
+  <rect x="1262" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="1327" y="176" font-size="13" fill="#11181c" text-anchor="middle">w3</text>
+  <text x="1327" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">zone-b</text>
+  <!-- w4 -->
+  <rect x="1406" y="156" width="130" height="48" fill="#ffffff" stroke="#5a6b7b" rx="6"/>
+  <text x="1471" y="176" font-size="13" fill="#11181c" text-anchor="middle">w4</text>
+  <text x="1471" y="194" font-size="11" fill="#5a6b7b" text-anchor="middle">zone-b</text>
+
+  <!-- ===================== BEFORE FUNNEL ===================== -->
+  <!-- connector chips -> filter -->
+  <line x1="410" y1="204" x2="410" y2="244" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- BEFORE single filter stage -->
+  <rect x="120" y="246" width="580" height="120" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="134" y="276" font-size="16" font-weight="bold" fill="#11181c">FILTER: taint toleration?</text>
+  <text x="134" y="306" font-size="15" fill="#c5221f">w1 &#10007;   w2 &#10007;   (tainted, no toleration)</text>
+  <text x="134" y="334" font-size="15" fill="#137333">w3 &#10003;   w4 &#10003;</text>
+  <text x="134" y="356" font-size="13" fill="#5a6b7b">only the two zone-b nodes survive the filter</text>
+
+  <!-- connector filter -> outcome -->
+  <line x1="410" y1="366" x2="410" y2="412" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- BEFORE outcome box -->
+  <rect x="120" y="414" width="580" height="120" fill="#fde8e7" stroke="#c5221f" rx="10"/>
+  <text x="410" y="456" font-size="20" font-weight="bold" fill="#c5221f" text-anchor="middle">LANDS ON zone-b &#10007;</text>
+  <text x="410" y="486" font-size="18" font-weight="bold" fill="#c5221f" text-anchor="middle">&#8594; CONFLICT</text>
+  <text x="410" y="514" font-size="13" fill="#5a6b7b" text-anchor="middle">workers in zone-a cannot reach a zone-b coordinator</text>
+
+  <!-- BEFORE caption -->
+  <rect x="120" y="552" width="580" height="74" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="134" y="582" font-size="15" fill="#11181c">
+    <tspan x="134" dy="0">no toleration &#8594; cannot enter GPU nodes;</tspan>
+    <tspan x="134" dy="22">falls to CPU zone-b.</tspan>
+  </text>
+
+  <!-- ===================== AFTER FUNNEL ===================== -->
+  <!-- connector chips -> filter 1 -->
+  <line x1="1190" y1="204" x2="1190" y2="234" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- AFTER filter 1 -->
+  <rect x="900" y="236" width="500" height="120" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="914" y="264" font-size="16" font-weight="bold" fill="#11181c">FILTER 1 — nodeAffinity REQUIRED</text>
+  <text x="914" y="286" font-size="15" fill="#11181c">zone In [zone-a]</text>
+  <text x="914" y="312" font-size="15" fill="#137333">w1 &#10003;  w2 &#10003;<tspan fill="#c5221f">  ;  w3 &#10007;  w4 &#10007;</tspan></text>
+  <text x="914" y="340" font-size="13" fill="#1a73e8">&#8592; PICKS the zone</text>
+
+  <!-- connector filter1 -> filter2 -->
+  <line x1="1150" y1="356" x2="1150" y2="388" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- AFTER filter 2 -->
+  <rect x="900" y="390" width="500" height="120" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="914" y="418" font-size="16" font-weight="bold" fill="#11181c">FILTER 2 — taint toleration (FIX3)</text>
+  <text x="914" y="446" font-size="15" fill="#137333">w1 &#10003;  w2 &#10003;</text>
+  <text x="914" y="472" font-size="13" fill="#1a73e8">&#8592; unlocks tainted nodes</text>
+  <text x="914" y="494" font-size="13" fill="#5a6b7b">(without it &#8594; Pending)</text>
+
+  <!-- connector filter2 -> filter3 -->
+  <line x1="1150" y1="510" x2="1150" y2="542" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- AFTER filter 3 -->
+  <rect x="900" y="544" width="500" height="120" fill="#eef1f5" stroke="#5a6b7b" rx="10"/>
+  <text x="914" y="572" font-size="16" font-weight="bold" fill="#11181c">FILTER 3 — topologySpread (Honor)</text>
+  <text x="914" y="600" font-size="15" fill="#137333">only domain = {zone-a}, skew ok &#10003;</text>
+  <text x="914" y="626" font-size="13" fill="#1a73e8">&#8592; co-location GUARD,</text>
+  <text x="914" y="648" font-size="13" fill="#1a73e8">not zone picker</text>
+
+  <!-- connector filter3 -> outcome -->
+  <line x1="1150" y1="664" x2="1150" y2="696" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- AFTER outcome box -->
+  <rect x="900" y="698" width="500" height="110" fill="#e6f4ea" stroke="#137333" rx="10"/>
+  <text x="1150" y="744" font-size="20" font-weight="bold" fill="#137333" text-anchor="middle">LANDS ON zone-a &#10003;</text>
+  <text x="1150" y="776" font-size="18" font-weight="bold" fill="#137333" text-anchor="middle">&#8594; RESOLVED</text>
+
+  <!-- ===================== BOTTOM FULL-WIDTH NOTE ===================== -->
+  <rect x="40" y="852" width="1520" height="150" fill="#eef4ff" stroke="#1a73e8" rx="10"/>
+  <text x="60" y="892" font-size="16" font-weight="bold" fill="#11181c">Mental model</text>
+  <text x="60" y="922" font-size="15" fill="#11181c">affinity PICKS the zone  &#183;  toleration UNLOCKS the nodes  &#183;  spread GUARDS co-location.</text>
+  <text x="60" y="956" font-size="15" fill="#5a6b7b">If GPUs spanned 2 zones, maxSkew:1 would SPREAD them apart</text>
+  <text x="60" y="980" font-size="15" fill="#5a6b7b">&#8212; true co-locator = podAffinity.</text>
+</svg>
