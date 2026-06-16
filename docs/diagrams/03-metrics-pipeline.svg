@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#5a6b7b"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1600" height="940" fill="#ffffff"/>
+
+  <text x="40" y="52" font-size="30" font-weight="bold" fill="#11181c">Observability Pipeline — From Pod State to Dashboards</text>
+  <text x="40" y="80" font-size="16" fill="#5a6b7b">KubeCon GPU-scheduling demo — kube-state-metrics &#8594; Prometheus &#8594; Grafana</text>
+
+  <!-- Stage 1 -->
+  <rect x="40" y="120" width="350" height="300" rx="10" fill="#eef1f5" stroke="#5a6b7b" stroke-width="2"/>
+  <text x="58" y="152" font-size="16" font-weight="bold" fill="#11181c">1. Pods + Nodes (ml-demo)</text>
+  <text x="58" y="184" font-size="13" fill="#11181c">coordinator: zone-b &#8594; zone-a</text>
+  <text x="58" y="208" font-size="13" fill="#11181c">4 gpu-workers</text>
+  <text x="58" y="236" font-size="13" fill="#11181c">phases: Running / Succeeded /</text>
+  <text x="58" y="255" font-size="13" fill="#11181c">Failed / Pending</text>
+  <text x="58" y="283" font-size="13" fill="#11181c">nodes labelled</text>
+  <text x="58" y="302" font-size="13" fill="#11181c">topology.kubernetes.io/zone</text>
+
+  <!-- Stage 2 -->
+  <rect x="430" y="120" width="350" height="300" rx="10" fill="#eef1f5" stroke="#5a6b7b" stroke-width="2"/>
+  <text x="448" y="152" font-size="16" font-weight="bold" fill="#11181c">2. kube-state-metrics</text>
+  <text x="448" y="184" font-size="13" fill="#11181c">kube_pod_status_phase</text>
+  <text x="448" y="206" font-size="13" fill="#11181c">1 series per pod PER phase</text>
+  <text x="448" y="236" font-size="13" fill="#c5221f" font-weight="bold">&#8594; rules MUST filter  == 1</text>
+  <text x="448" y="268" font-size="13" fill="#11181c">kube_pod_info / kube_pod_labels</text>
+  <text x="448" y="290" font-size="13" fill="#11181c">kube_node_labels</text>
+  <text x="448" y="322" font-size="13" fill="#c5221f" font-weight="bold">&#8594; needs allowlist</text>
+  <text x="448" y="341" font-size="13" fill="#c5221f" font-weight="bold">nodes=[topology.kubernetes.io/zone]</text>
+
+  <!-- Stage 3 -->
+  <rect x="820" y="120" width="350" height="300" rx="10" fill="#eef1f5" stroke="#5a6b7b" stroke-width="2"/>
+  <text x="838" y="152" font-size="16" font-weight="bold" fill="#11181c">3. Prometheus recording rules</text>
+  <text x="838" y="174" font-size="13" fill="#5a6b7b">eval interval 15s</text>
+  <text x="838" y="206" font-size="13" fill="#11181c">gpu_demo_zones_occupied</text>
+  <text x="838" y="230" font-size="13" fill="#11181c">gpu_demo_utilization_pct</text>
+  <text x="838" y="254" font-size="13" fill="#11181c">gpu_demo_workers_running</text>
+  <text x="838" y="278" font-size="13" fill="#11181c">gpu_demo_workers_connected</text>
+  <text x="838" y="302" font-size="13" fill="#11181c">gpu_demo_coordinator_zone</text>
+  <text x="838" y="326" font-size="13" fill="#11181c">gpu_demo_conflict_score</text>
+
+  <!-- Stage 4 -->
+  <rect x="1210" y="120" width="350" height="300" rx="10" fill="#eef1f5" stroke="#5a6b7b" stroke-width="2"/>
+  <text x="1228" y="152" font-size="16" font-weight="bold" fill="#11181c">4. Grafana + Alerts</text>
+  <text x="1228" y="184" font-size="13" fill="#11181c">8-panel dashboard</text>
+  <text x="1228" y="216" font-size="13" fill="#11181c">GPUUtilizationCriticallyLow</text>
+  <text x="1228" y="235" font-size="13" fill="#5a6b7b">util &#60; 50% for 1m  (warning)</text>
+  <text x="1228" y="269" font-size="13" fill="#11181c">GPUWorkersCantReach-</text>
+  <text x="1228" y="288" font-size="13" fill="#11181c">Coordinator</text>
+  <text x="1228" y="307" font-size="13" fill="#5a6b7b">coord_zone&#62;0 AND running&#62;0,</text>
+  <text x="1228" y="326" font-size="13" fill="#5a6b7b">for 30s  (critical)</text>
+
+  <!-- connectors -->
+  <line x1="390" y1="270" x2="428" y2="270" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="780" y1="270" x2="818" y2="270" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="1170" y1="270" x2="1208" y2="270" stroke="#5a6b7b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- KEY METRIC MATH -->
+  <rect x="40" y="470" width="1140" height="430" rx="10" fill="#eef4ff" stroke="#1a73e8" stroke-width="2"/>
+  <text x="60" y="506" font-size="18" font-weight="bold" fill="#11181c">KEY METRIC MATH</text>
+
+  <text x="60" y="548" font-size="15" fill="#11181c" font-weight="bold">gpu_demo_zones_occupied = count(distinct zones of ml-demo pods)</text>
+  <text x="80" y="572" font-size="15" fill="#11181c">&#8594; BEFORE <tspan fill="#c5221f" font-weight="bold">2</tspan>  (coord zone-b + workers zone-a)   /   AFTER <tspan fill="#137333" font-weight="bold">1</tspan>  (all in zone-a)</text>
+
+  <text x="60" y="620" font-size="15" fill="#11181c" font-weight="bold">gpu_demo_utilization_pct = running*40/4 + connected*85/4</text>
+  <text x="80" y="644" font-size="15" fill="#11181c">&#8594; BEFORE <tspan fill="#c5221f" font-weight="bold">40</tspan>  (4 running, 0 done)   /   AFTER <tspan fill="#137333" font-weight="bold">85</tspan>  (0 running, 4 done)</text>
+
+  <text x="60" y="692" font-size="15" fill="#11181c" font-weight="bold">gpu_demo_conflict_score = clamp_max(coordinator_zone, 1.0)</text>
+  <text x="80" y="716" font-size="15" fill="#11181c">&#8594; BEFORE <tspan fill="#c5221f" font-weight="bold">1.0</tspan>   /   AFTER <tspan fill="#137333" font-weight="bold">0.0</tspan></text>
+
+  <line x1="60" y1="748" x2="1160" y2="748" stroke="#c7d6f5" stroke-width="1"/>
+  <text x="60" y="776" font-size="13" fill="#5a6b7b">workers_connected = gpu-workers in Succeeded phase;  workers_running = gpu-workers in Running phase (the BEFORE retry state).</text>
+  <text x="60" y="800" font-size="13" fill="#5a6b7b">coordinator_zone = 1 while the coordinator carries label zone=zone-b, 0 once it is pinned into zone-a.</text>
+  <text x="60" y="824" font-size="13" fill="#5a6b7b">ADDITION (not  "A or B" ) is used for utilization — otherwise the running term is silently dropped when it is 0.</text>
+
+  <!-- SCRAPE LAG -->
+  <rect x="1210" y="470" width="350" height="430" rx="10" fill="#fff4e5" stroke="#b06000" stroke-width="2"/>
+  <text x="1228" y="506" font-size="18" font-weight="bold" fill="#11181c">SCRAPE LAG</text>
+  <text x="1228" y="544" font-size="13" fill="#11181c" font-weight="bold">After a reset:</text>
+  <text x="1228" y="566" font-size="13" fill="#11181c">baseline reads 0 only after</text>
+  <text x="1228" y="585" font-size="13" fill="#11181c">~45s — Prometheus holds</text>
+  <text x="1228" y="604" font-size="13" fill="#11181c">series through its ~5-min</text>
+  <text x="1228" y="623" font-size="13" fill="#11181c">staleness window.</text>
+  <text x="1228" y="668" font-size="13" fill="#11181c" font-weight="bold">After the Job completes:</text>
+  <text x="1228" y="690" font-size="13" fill="#11181c">utilization shows 40% for</text>
+  <text x="1228" y="709" font-size="13" fill="#11181c">~15-60s (KSM scrape + Prom</text>
+  <text x="1228" y="728" font-size="13" fill="#11181c">scrape + 15s rule eval),</text>
+  <text x="1228" y="747" font-size="13" fill="#11181c">because util keys off the</text>
+  <text x="1228" y="766" font-size="13" fill="#11181c">Succeeded phase. It sits at</text>
+  <text x="1228" y="785" font-size="13" fill="#11181c">40% while pods are still</text>
+  <text x="1228" y="804" font-size="13" fill="#11181c">Running, then jumps to 85%.</text>
+</svg>
