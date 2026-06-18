@@ -171,8 +171,10 @@ helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --wait --timeout=300s
 
 success "Prometheus + Grafana installed."
-info "  Grafana:    http://localhost:30080  (admin/admin)"
-info "  Prometheus: http://localhost:30090"
+info "  Access via port-forward (kind does not route NodePorts on macOS):"
+info "    bash scripts/open-dashboards.sh"
+info "    Grafana:    http://localhost:3000  (admin/admin)"
+info "    Prometheus: http://localhost:9090"
 
 # ---------------------------------------------------------
 # STEP 5: Create ml-demo namespace + Cilium network policies
@@ -216,7 +218,8 @@ kubectl get nodes -L topology.kubernetes.io/zone,gpu \
   -o custom-columns='NAME:.metadata.name,STATUS:.status.conditions[-1].type,ZONE:.metadata.labels.topology\.kubernetes\.io/zone,GPU:.metadata.labels.gpu'
 echo ""
 echo "Next steps:"
-echo "  1. bash scripts/demo-before.sh   — reproduce the scheduling conflict"
-echo "  2. Open Grafana: http://localhost:30080  (admin/admin)"
-echo "  3. bash scripts/demo-after.sh    — apply the fix"
+echo "  1. bash scripts/open-dashboards.sh — port-forward Grafana (3000) + Prometheus (9090)"
+echo "  2. bash scripts/demo-before.sh     — reproduce the scheduling conflict"
+echo "  3. Open Grafana: http://localhost:3000  (admin/admin)"
+echo "  4. bash scripts/demo-after.sh      — apply the fix"
 echo ""
