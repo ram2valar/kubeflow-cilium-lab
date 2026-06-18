@@ -14,6 +14,10 @@ LAB_DIR="$(dirname "$SCRIPT_DIR")"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 step() { echo -e "\n${BOLD}${BLUE}━━━ $* ━━━${NC}\n"; }
 
+# Pin kubeconfig + context so the demo works regardless of the shell's KUBECONFIG
+export KUBECONFIG="${HOME}/.kube/config"
+kubectl config use-context kind-kubeflow-cilium-demo >/dev/null 2>&1
+
 # ---------------------------------------------------------
 step "0. Clean up any previous run"
 # ---------------------------------------------------------
