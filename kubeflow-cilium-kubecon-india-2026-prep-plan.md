@@ -1,5 +1,7 @@
 # KubeCon India 2026 – Presentation & Demo Prep Plan
 
+> ✅ **DELIVERED — Friday, 19 June 2026.** Talk went well, huge applause. Demo environment torn down afterward (kind cluster deleted, port-forwards stopped, demo images removed). Lab preserved in this repo and reproducible via `bash scripts/setup.sh`. Co-presented with Bingi Narasimha Karthik. The plan below is the historical prep record.
+
 **Talk:** When Kubeflow Fights Cilium: Debugging 60% Idle GPUs in Kubernetes  
 **Event:** KubeCon India 2026 | **Dates:** 18–19 June 2026  
 **Session (CONFIRMED):** Friday, 19 June 2026, 12:40–1:10pm — **30-minute slot**  
