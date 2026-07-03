@@ -247,6 +247,6 @@ recordings/
 - **Speakers:** Ramkumar Nagaraj & Bingi Narasimha Karthik (Adobe)
 - **Session:** https://kccncind2026.sched.com/event/2IW3n/when-kubeflow-fights-cilium-debugging-60-idle-gpus-in-kubernetes-ramkumar-nagaraj-bingi-narasimha-karthik-adobe
 - **Slides:** on Sched (link above) and in this repo
-- **Recording:** _to be added when CNCF publishes the session_
+- **Recording:** https://www.youtube.com/watch?v=BG9XGouyM9c
 - **Write-up:** [docs/blog-when-kubeflow-fights-cilium.md](docs/blog-when-kubeflow-fights-cilium.md)
 - **Repo:** https://github.com/ram2valar/kubeflow-cilium-lab

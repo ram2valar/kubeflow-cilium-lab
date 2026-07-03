@@ -2,6 +2,7 @@
 
 > Companion write-up for the KubeCon + CloudNativeCon India 2026 talk by
 > Ramkumar Nagaraj & Bingi Narasimha Karthik (Adobe).
+> 📺 Recording: https://www.youtube.com/watch?v=BG9XGouyM9c
 > Session: https://kccncind2026.sched.com/event/2IW3n/when-kubeflow-fights-cilium-debugging-60-idle-gpus-in-kubernetes-ramkumar-nagaraj-bingi-narasimha-karthik-adobe
 > Reproducible lab: https://github.com/ram2valar/kubeflow-cilium-lab
 
