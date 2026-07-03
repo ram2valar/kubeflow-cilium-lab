@@ -1,110 +1,60 @@
-# When Kubeflow Fights Cilium: Debugging 60% Idle GPUs
+# When Kubeflow Fights Cilium: Debugging 60% Idle GPUs in Kubernetes
 
-> Companion write-up for the KubeCon + CloudNativeCon India 2026 talk by
-> Ramkumar Nagaraj & Bingi Narasimha Karthik (Adobe).
+> By Ramkumar Nagaraj & Bingi Narasimha Karthik (Adobe).
 > 📺 Recording: https://www.youtube.com/watch?v=BG9XGouyM9c
 > Session: https://kccncind2026.sched.com/event/2IW3n/when-kubeflow-fights-cilium-debugging-60-idle-gpus-in-kubernetes-ramkumar-nagaraj-bingi-narasimha-karthik-adobe
 > Reproducible lab: https://github.com/ram2valar/kubeflow-cilium-lab
 
-## The symptom that makes no sense
+## The symptom that made no sense
 
-Your distributed training job is scheduled. Every pod is `Running`. There are no
-crashes, no `OOMKilled`, no kernel errors. And yet your GPUs sit ~60% idle while
-training never makes progress. Every health check is green — and nothing computes.
+The first time we saw it, we didn't trust the dashboard. A distributed training job was scheduled and healthy — every pod Running, no crashes, no OOMKills, nothing in the logs. And yet more than half the GPUs we were paying for sat idle, and training never actually started. Every health check was green, and nothing was computing.
 
-## The metaphor
+## A metaphor that finally made it click
 
-Imagine a sold-out concert hall. Every musician is seated, instruments tuned, the
-hall lit. But the conductor was shown to the wrong wing — and the fire-safety doors,
-doing exactly their job, sealed that wing off. The result: a full, expensive hall,
-and total silence.
+We kept reaching for a way to explain it, and this is the one that stuck. Imagine a sold-out concert hall. Every musician is in their seat, instruments tuned, the hall lit. But the conductor was shown to the wrong wing of the building — and the fire-safety doors, doing exactly their job, sealed that wing off. The result is a full, expensive hall and complete silence.
 
-That is your GPU cluster. The conductor is the coordinator pod, the musicians are
-the GPU workers (who can only play *in sync, through the conductor* — just as
-distributed training synchronizes gradients through the coordinator), and the fire
-doors are Cilium's network policy: a *correct* safety rule that nobody told the
-scheduler about.
+That is a GPU cluster in this failure mode. The conductor is the training coordinator. The musicians are the GPU workers, who can only play in sync, through the conductor — the same way distributed training synchronizes gradients through a coordinator. And the fire doors are the network policy: a correct, intentional safety rule that nobody told the scheduler about.
 
-## The root cause
+## The root cause: two correct systems, collectively wrong
 
-Two systems, each individually correct, are collectively wrong:
+Kubernetes scheduling is topology-agnostic by design. It places pods based on available resources — CPU, memory, GPU count — without reasoning about which availability zone a pod lands in. Kubeflow inherits that assumption.
 
-- **The scheduler is topology-agnostic.** Kubernetes places pods by available
-  resources — CPU, memory, GPU count — not by which availability zone they land in.
-  Kubeflow inherits that assumption.
-- **Cilium is topology-aware.** It enforces zone boundaries via `CiliumNetworkPolicy`
-  (for blast-radius isolation, compliance, cost control, or dedicated GPU-pool
-  protection). It cannot reschedule a pod that's already been placed.
+Cilium, on the other hand, is topology-aware. Operators use `CiliumNetworkPolicy` to draw zone boundaries for blast-radius isolation, compliance, cost control, or to protect an expensive dedicated GPU pool. That's good security hygiene — and Cilium can't reschedule a pod that has already been placed.
 
-The gap between them strands the coordinator in a different zone from the GPU
-workers, and the network silently blocks the connection. Nobody holds the map that
-shows both the seating plan and the locked doors at once.
+Put those two together and you get a class of problem where each system makes an individually correct decision, and together they're wrong. The coordinator lands in one zone, the GPU workers in another, and the network silently blocks the connection between them. No one holds the single map that shows both the pod placement and the locked doors at once.
 
 ## It's a spectrum, not a single bug
 
-The same cross-zone placement shows up three ways in production:
+What surprised us most is that the same root cause shows up three different ways in production:
 
-1. **Hard block** — a zone-boundary network policy *denies* the connection; workers
-   can't reach the coordinator and training never starts. Detected in seconds.
-2. **Cross-zone NCCL latency** — no hard block, just distance; AllReduce pays
-   cross-zone round-trip time and throughput drops 30–60% with no error at all.
-   Detected in hours.
-3. **Cross-AZ egress cost** — invisible to Kubernetes; surfaces only on the cloud
-   bill as inter-AZ data-transfer charges. Detected in days.
+1. **Hard block.** A zone-boundary network policy denies the connection outright. Workers can't reach the coordinator and training never starts. You notice in seconds.
+2. **Cross-zone latency.** With no hard block, just distance, gradient synchronization (NCCL AllReduce) pays cross-zone round-trip time on every step. Throughput quietly drops 30–60% with no error at all. You notice in hours, if you're paying attention.
+3. **Cross-AZ egress cost.** The traffic crosses availability zones and shows up only on the cloud bill as inter-AZ data transfer. You notice in days, on the invoice.
 
-See [docs/production-context.md](production-context.md) for the full diagnostic
-runbook for each scenario.
+The demo we built reproduces the first case because it fails cleanly and visibly. But the second and third are the ones that quietly drain budgets in real clusters.
 
-## One fix resolves all three
+## The fix
 
-Co-locate the whole training group in one zone. No Kubeflow patch. No Cilium change.
-Just topology-aware scheduling on the workload spec:
+The surprise is how little you have to change. We didn't touch Cilium — the locked doors stay locked, because the security policy was never the problem. And we didn't patch Kubernetes or Kubeflow. We simply gave the scheduler the one piece of information it was missing: keep the whole training group together, in a zone whose network path is open.
 
-```yaml
-# On the coordinator (and the whole ml-training group):
-affinity:
-  nodeAffinity:                                   # pin to the GPU zone
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: topology.kubernetes.io/zone
-              operator: In
-              values: [zone-a]
-topologySpreadConstraints:                        # keep the group co-located
-  - maxSkew: 1
-    topologyKey: topology.kubernetes.io/zone
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels: { app: ml-training }
-tolerations:                                      # so it can land on GPU-tainted nodes
-  - key: gpu
-    value: present
-    effect: NoSchedule
-```
+In practice that's a few lines of Kubernetes-native YAML on the workload spec: `nodeAffinity` to pin the group to the GPU zone, `topologySpreadConstraints` to co-locate the coordinator and workers, and a toleration so the coordinator can actually land on the GPU-tainted nodes. Once every communicating pod shares a zone, the traffic is intra-zone — the hard block disappears, the latency disappears, and the cross-AZ egress disappears. One fix, all three symptoms.
 
-A portable variant — co-locate by relationship rather than a hard-coded zone name —
-uses `podAffinity` with `topologyKey: topology.kubernetes.io/zone` to put the group
-in whatever zone the coordinator landed in.
+If you don't want to hard-code a zone name, `podAffinity` with a zone topology key achieves the same thing by relationship: place the workers in whatever zone the coordinator landed in. Same idea, portable across clusters.
 
-The scheduler was always topology-capable — `topologySpreadConstraints` and
-`nodeAffinity` are native Kubernetes. It just needed to be told to care.
+In our lab, GPU utilization went from around 40% to around 85% the moment the group was co-located.
 
-## Reproduce it yourself
+## What we took away
 
-The full lab is in this repo: a 5-node kind cluster (GPU-tainted zone-a + CPU
-zone-b), Cilium with a zone-based network policy, Prometheus recording rules, a
-Grafana dashboard, and before/after demo scripts.
+- **Your CNI has opinions about topology that your scheduler can't see.** Topology-aware network policies are silent to the Kubernetes scheduler — and that silence is where the failure lives.
+- **The fix is Kubernetes-native.** No CNI change, no framework patch — just topology spread constraints and affinity in the workload spec.
+- **Instrument before you need it.** GPU utilization and pod-zone metrics in Prometheus and Grafana exposed this for us in seconds; without them it can take days.
+- **The pattern generalizes.** Any topology-aware CNI plus any distributed ML framework can hit the same wall. It isn't specific to Cilium or Kubeflow.
 
-```bash
-bash scripts/setup.sh            # build the cluster + monitoring
-bash scripts/open-dashboards.sh  # Grafana :3000, Prometheus :9090
-bash scripts/demo-before.sh      # reproduce the conflict (~40% GPU)
-bash scripts/demo-after.sh       # apply the fix (~85% GPU)
-```
+## Try it yourself
 
-## Takeaways
+We packaged the whole thing as a reproducible lab — a kind cluster with GPU and CPU zones, the Cilium policy, Prometheus recording rules, a Grafana dashboard, and before/after demo scripts:
 
-- Your CNI has opinions about topology that your scheduler can't see.
-- Topology spread constraints are the Kubernetes-native fix — no CNI or framework changes.
-- Instrument for it before you need it: GPU utilization + pod-zone metrics expose this in seconds, not days.
-- The pattern applies to any topology-aware CNI plus any distributed ML framework — not just Cilium and Kubeflow.
+- Repo: https://github.com/ram2valar/kubeflow-cilium-lab
+- Talk recording (KubeCon + CloudNativeCon India 2026): https://www.youtube.com/watch?v=BG9XGouyM9c
+
+Spin it up, watch the GPUs go idle, apply the fix, and watch them come back.
