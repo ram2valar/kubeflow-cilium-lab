@@ -1,15 +1,19 @@
 ---
 title: "When Kubeflow Fights Cilium: Debugging 60% Idle GPUs in Kubernetes"
-published: true
+published: false
 description: "Every pod Running, no errors — yet 60% of GPUs sit idle. The culprit isn't Kubeflow or Cilium, but the gap between a topology-blind scheduler and a topology-aware CNI. Here's how we found it and fixed it in a few lines of YAML."
 tags: kubernetes, cilium, kubeflow, mlops
 ---
 
 <!--
 PUBLISHING NOTES (delete these lines when pasting into dev.to):
-- dev.to is the CANONICAL home for now (CNCF community route pending Ambassador status ~Sept).
-- No canonical_url set — this is the original.
-- If CNCF later publishes it, set the canonical_url on BOTH to the CNCF post.
+- CNCF is the CANONICAL home. CNCF accepted this as a community post (under Golden
+  Kubestronaut status); scheduled to publish 2026-07-23 ~4:30am PDT.
+- CNCF's editor-preferred title is "When Kubeflow MEETS Cilium..." — decide whether to
+  match that here or keep "Fights" (the talk/recording title). Either is fine; the
+  canonical_url is what dedupes, not the title.
+- HOLD publishing until the CNCF post is live (2026-07-23), then publish this as a
+  cross-post with canonical_url set to the CNCF post URL.
 - Add a cover image via the dev.to editor (Grafana 40%->85% arc, or the concert-hall metaphor image).
 - Tags are capped at 4 by dev.to.
 -->
